@@ -1,4 +1,4 @@
-// === DBS Tetris AI - Ultimate Time-Bound Optimizer ===
+// === DBS Tetris AI Optimizer === Nguyen An Loc
 // INSTRUCTIONS:
 // 1. Open tetris.therayg.com/competition.html
 // 2. Open Developer Console (Cmd+Option+J or F12)
