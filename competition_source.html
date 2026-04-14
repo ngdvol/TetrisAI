@@ -1,0 +1,5115 @@
+<!--
+  MIT License
+
+  Copyright (c) 2026 TheRayG
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy
+  of this software and associated documentation files (the "Software"), to deal
+  in the Software without restriction, including without limitation the rights
+  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  copies of the Software, and to permit persons to whom the Software is
+  furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tetris</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #222;
+  color: white;
+  font-family: 'Press Start 2P', cursive;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 20px;
+}
+
+#game-layout {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.side-panel { width: 200px; }
+.side-panel-right { width: 220px; }
+
+/* Left Panel Sections */
+.left-panel-section {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 8px;
+  margin-bottom: 6px;
+}
+.left-panel-section .panel-heading {
+  font-size: 8px;
+  color: #00FFFF;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.controls-list .control-row {
+  font-size: 7px;
+  line-height: 2.2;
+}
+.controls-list .key-label { color: #00FFFF; }
+
+.stats-section .stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 8px;
+  line-height: 2.2;
+}
+.stat-label { color: #888; }
+.stat-value { color: #00FF00; }
+
+.high-score-section { margin-bottom: 0; }
+
+.btn-reset-high {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  background: transparent;
+  color: #FF4444;
+  border: 1px solid #FF4444;
+  padding: 4px 8px;
+  cursor: pointer;
+  margin-top: 8px;
+  width: 100%;
+}
+.btn-reset-high:hover { background: rgba(255,68,68,0.2); }
+
+/* Center Column */
+.center-column { display: flex; gap: 15px; align-items: flex-start; }
+
+#board-wrapper {
+  position: relative;
+  border: 3px solid #00FFFF;
+  padding: 4px;
+  box-shadow: 0 0 20px rgba(0,255,255,0.5);
+  background: #111;
+  display: grid;
+  grid-template-columns: 16px 220px;
+  grid-template-rows: 440px 14px;
+}
+
+#board-row-labels {
+  display: flex;
+  flex-direction: column;
+  grid-column: 1;
+  grid-row: 1;
+}
+#board-row-labels span {
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: rgba(255,255,255,0.3);
+  line-height: 1;
+}
+
+#board-col-labels {
+  display: flex;
+  grid-column: 2;
+  grid-row: 2;
+}
+#board-col-labels span {
+  width: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: rgba(255,255,255,0.3);
+  line-height: 1;
+}
+
+#game-board {
+  display: grid;
+  grid-template-columns: repeat(10, 22px);
+  grid-template-rows: repeat(20, 22px);
+  width: 220px;
+  height: 440px;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+#game-board .cell {
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+#game-board .cell.filled {
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+#game-board .cell.ghost {
+  background: transparent !important;
+  border: 1px dashed white;
+  opacity: 0.3;
+  box-shadow: none;
+}
+#game-board .cell.overlay-cell {
+  box-shadow: none;
+}
+
+.preview-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 130px;
+}
+
+.preview-box {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 6px 8px;
+}
+.preview-box .preview-label {
+  font-size: 8px;
+  color: #00FFFF;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 17px);
+  grid-template-rows: repeat(3, 17px);
+  width: 68px;
+  height: 51px;
+}
+
+.preview-grid .cell {
+  width: 17px;
+  height: 17px;
+  border: 0.5px solid rgba(255,255,255,0.05);
+}
+.preview-grid .cell.filled {
+  border: 1px solid rgba(255,255,255,0.3);
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* Overlays */
+.overlay {
+  position: absolute;
+  top: 4px; left: 20px;
+  width: 220px; height: 440px;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.overlay.hidden { display: none; }
+#pause-screen { background: rgba(0,0,0,0.5); }
+.overlay h1 {
+  font-size: 24px;
+  color: #00FFFF;
+  margin-bottom: 15px;
+  text-shadow: 0 0 10px rgba(0,255,255,0.5);
+}
+.overlay h2 {
+  font-size: 14px;
+  color: #00FFFF;
+  margin-bottom: 10px;
+  text-align: center;
+}
+.overlay p {
+  font-size: 8px;
+  margin-bottom: 8px;
+  color: #ccc;
+}
+.overlay .btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  background: transparent;
+  color: #00FFFF;
+  border: 2px solid #00FFFF;
+  padding: 10px 20px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.overlay .btn:hover {
+  background: rgba(0,255,255,0.15);
+}
+.overlay .btn[style*="FF8800"]:hover {
+  background: rgba(255,136,0,0.15);
+}
+
+/* Right Panel - AI Viz */
+.ai-viz-container {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 6px;
+  margin-bottom: 6px;
+}
+.ai-viz-container .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.panel-heading {
+  font-size: 8px;
+  color: #00FFFF;
+  text-transform: uppercase;
+}
+
+.badge {
+  font-size: 7px;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.ai-on { background: #00FF00; color: #000; }
+.ai-off { background: #FF4444; color: #fff; }
+.viz-on { background: #00FF00; color: #000; }
+.viz-off { background: #FF4444; color: #fff; }
+
+.heatmap-section { margin-bottom: 6px; }
+.heatmap-label {
+  font-size: 6px;
+  color: #aaa;
+  margin-bottom: 3px;
+}
+.heatmap-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.heatmap-row {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+.heatmap-row-label {
+  font-size: 5px;
+  color: #888;
+  width: 16px;
+  text-align: right;
+  margin-right: 2px;
+}
+.heatmap-cell {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  cursor: pointer;
+  background: #333;
+}
+.heatmap-cell.wall-cell { background: #888; cursor: default; }
+.heatmap-cell.invalid-cell { background: #333; cursor: default; }
+.heatmap-cell.game-over-cell {
+  background: #000;
+  border: 1px solid #FF4444;
+}
+.heatmap-cell.best { outline: 2px solid #00FFFF; z-index: 1; }
+
+#heatmap-tooltip {
+  position: absolute;
+  background: rgba(0,0,0,0.95);
+  border: 1px solid #00FFFF;
+  font-size: 7px;
+  font-family: monospace;
+  color: white;
+  padding: 5px;
+  max-width: 160px;
+  pointer-events: none;
+  z-index: 200;
+  display: none;
+  white-space: pre-line;
+}
+
+/* Score Breakdown */
+.score-breakdown { margin-top: 6px; }
+.score-breakdown-header {
+  font-size: 8px;
+  color: #00FFFF;
+  margin-bottom: 4px;
+}
+.breakdown-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  font-size: 6px;
+}
+.breakdown-label {
+  width: 50px;
+  color: #888;
+}
+.breakdown-bar-container {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  position: relative;
+}
+.breakdown-bar {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  min-width: 2px;
+}
+.breakdown-bar.positive {
+  background: #00FF00;
+  left: 50%;
+}
+.breakdown-bar.negative {
+  background: #FF4444;
+  right: 50%;
+}
+.breakdown-center-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  height: 100%;
+  width: 1px;
+  background: rgba(255,255,255,0.2);
+}
+.breakdown-value {
+  width: 55px;
+  text-align: right;
+  color: #ccc;
+}
+
+/* AI Tuning Panel */
+.ai-tuning-panel {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 8px;
+}
+.ai-tuning-panel .panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.tuning-delay-row {
+  margin-bottom: 8px;
+}
+.tuning-delay-row label {
+  font-size: 6px;
+  color: #888;
+  display: block;
+  margin-bottom: 3px;
+}
+.tuning-delay-row select {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  background: #333;
+  color: white;
+  border: 1px solid #555;
+  padding: 3px;
+  width: 100%;
+}
+.delay-dropdown { position: relative; }
+.delay-dropdown-trigger {
+  width: 100%; padding: 3px; background: #333; color: white;
+  border: 1px solid #555; font-family: 'Press Start 2P', cursive; font-size: 7px;
+  cursor: pointer; box-sizing: border-box;
+}
+.delay-dropdown-trigger::after {
+  content: '\25BC'; float: right; font-size: 5px; margin-top: 1px; color: #888;
+}
+.delay-dropdown-menu {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 210;
+  background: #333; border: 1px solid #00FFFF; max-height: 150px; overflow-y: auto;
+}
+.delay-dropdown-menu.hidden { display: none; }
+.delay-dropdown-item {
+  padding: 4px 6px; font-family: 'Press Start 2P', cursive; font-size: 7px;
+  color: white; cursor: pointer;
+}
+.delay-dropdown-item:hover { background: rgba(0,255,255,0.2); }
+.delay-dropdown-item.selected { color: #00FFFF; }
+
+.tuning-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 8px;
+}
+.tuning-item {
+  margin-bottom: 4px;
+}
+.tuning-item .tuning-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.tuning-item label {
+  font-size: 6px;
+  color: #ccc;
+  white-space: nowrap;
+}
+.tuning-item .tuning-value {
+  font-size: 6px;
+  color: #00FF00;
+}
+.tuning-item input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: #333;
+  border-radius: 3px;
+  outline: none;
+}
+.tuning-item input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.tuning-item input[type=range]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  background: #FFFFFF;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+.tuning-item input[type=range]::-moz-range-track {
+  background: #333;
+  height: 6px;
+  border-radius: 3px;
+}
+
+.btn-reset-weights {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  background: transparent;
+  color: #00FFFF;
+  border: 1px solid #00FFFF;
+  padding: 4px 8px;
+  cursor: pointer;
+  margin-top: 6px;
+  width: 100%;
+}
+.btn-reset-weights:hover { background: rgba(0,255,255,0.15); }
+.tuning-export-row { display: flex; gap: 4px; margin-top: 6px; margin-bottom: 4px; }
+.tuning-export-row .btn-reset-weights { flex: 1; margin-top: 0; }
+.export-menu {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  z-index: 210; background: #111; border: 1px solid #00CCFF;
+  min-width: max-content;
+}
+.export-menu.hidden { display: none; }
+.export-menu-item {
+  padding: 5px 8px; font-family: 'Press Start 2P', monospace; font-size: 6px;
+  color: #00CCFF; cursor: pointer; white-space: nowrap;
+}
+.export-menu-item:hover { background: rgba(0,204,255,0.2); }
+.sim-btn-row { display: flex; gap: 4px; margin-bottom: 4px; }
+.sim-btn-row .btn-reset-weights { flex: 1; margin-top: 0; }
+
+/* Touch Button Panel */
+.touch-panel {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 8px;
+}
+.touch-panel .panel-heading {
+  font-size: 8px;
+  color: #00FFFF;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.touch-actions {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.touch-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  background: rgba(255,255,255,0.08);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 6px 4px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  border-radius: 3px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.touch-btn:active { background: rgba(0,255,255,0.2); color: #00FFFF; border-color: #00FFFF; }
+.touch-btn.active-toggle { background: rgba(0,255,0,0.15); color: #00FF00; border-color: #00FF00; }
+
+.touch-dpad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.touch-dpad-row {
+  display: flex;
+  gap: 3px;
+}
+.touch-dpad-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 10px;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+}
+.touch-dpad-btn:active { background: rgba(0,255,255,0.2); color: #00FFFF; border-color: #00FFFF; }
+.touch-dpad-spacer { width: 36px; height: 36px; }
+.touch-dpad-wide {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  width: 78px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  margin-top: 3px;
+}
+.touch-dpad-wide:active { background: rgba(0,255,255,0.2); color: #00FFFF; border-color: #00FFFF; }
+
+/* Seed Panel */
+.seed-panel {
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(0,255,255,0.3);
+  padding: 8px;
+  margin-top: 6px;
+}
+.seed-panel .panel-heading { margin-bottom: 6px; }
+.seed-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.seed-input {
+  font-family: monospace;
+  font-size: 10px;
+  background: #333;
+  color: #00FF00;
+  border: 1px solid #555;
+  padding: 4px 6px;
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+.seed-input:focus { border-color: #00FFFF; }
+.seed-randomize-btn {
+  font-size: 14px;
+  background: rgba(255,255,255,0.08);
+  color: #ccc;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.seed-randomize-btn:focus { outline: 1px solid #00FFFF; outline-offset: 1px; }
+.seed-randomize-btn:active { background: rgba(0,255,255,0.2); color: #00FFFF; border-color: #00FFFF; }
+.seed-hint {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  color: #666;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+/* CEM Training Modal */
+.cem-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.cem-modal.hidden { display: none; }
+.cem-modal-content {
+  background: #1a1a1a;
+  border: 2px solid #00FFFF;
+  box-shadow: 0 0 30px rgba(0,255,255,0.3);
+  padding: 16px 20px;
+  max-width: 420px;
+  width: 90%;
+}
+.cem-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.cem-progress-bar {
+  width: 100%;
+  height: 12px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 2px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+.cem-progress-fill {
+  height: 100%;
+  background: #00FF00;
+  width: 0%;
+  transition: width 0.2s;
+}
+.cem-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-family: monospace;
+  font-size: 9px;
+  color: #ccc;
+  margin: 4px 0;
+}
+.cem-stat-row .cem-val { color: #00FF00; }
+.cem-weights-preview {
+  font-family: monospace;
+  font-size: 8px;
+  color: #888;
+  margin: 8px 0;
+  padding: 6px;
+  background: rgba(0,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.2);
+  border-radius: 3px;
+}
+.cem-weights-preview span { color: #00FF00; }
+.cem-status {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: #00FFFF;
+  text-align: center;
+  margin: 10px 0 6px;
+}
+.cem-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.cem-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+}
+.cem-btn:disabled { opacity: 0.4; cursor: default; }
+.cem-btn-stop { background: transparent; color: #FF8800; border: 1px solid #FF8800; }
+.cem-btn-stop:hover { background: rgba(255,136,0,0.15); }
+.cem-btn-stop:disabled { opacity: 0.4; cursor: default; }
+.cem-btn-close { background: transparent; color: #00FF00; border: 1px solid #00FF00; }
+.cem-btn-close:hover { background: rgba(0,255,0,0.15); }
+.cem-btn-close:disabled { opacity: 0.4; cursor: default; }
+.cem-btn-start { background: transparent; color: #00FF00; border: 1px solid #00FF00; }
+.cem-btn-start:hover { background: rgba(0,255,0,0.15); }
+.cem-btn-start:disabled { opacity: 0.4; cursor: default; }
+.cem-params {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+}
+.cem-param-group {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cem-param-group label {
+  font-family: monospace;
+  font-size: 7px;
+  color: #888;
+}
+.cem-param-group input {
+  background: #111;
+  border: 1px solid #555;
+  color: #00FF00;
+  font-family: monospace;
+  font-size: 10px;
+  padding: 4px 6px;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: center;
+  border-radius: 2px;
+}
+.cem-param-group input:focus {
+  border-color: #00FFFF;
+  outline: none;
+}
+.cem-param-group input:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Formula Customization Modal */
+.formula-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+/* Custom Scorer Modal */
+.scorer-modal {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.scorer-modal.hidden { display: none; }
+.scorer-modal-content {
+  background: #1a1a1a;
+  border: 2px solid #CC00FF;
+  box-shadow: 0 0 30px rgba(204,0,255,0.3);
+  padding: 16px 20px;
+  max-width: 520px;
+  width: 90%;
+  height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.scorer-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.scorer-desc {
+  font-family: monospace;
+  font-size: 8px;
+  color: #999;
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+.scorer-desc code {
+  color: #CC00FF;
+  background: rgba(204,0,255,0.1);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+.scorer-editor-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 120px;
+  flex: 1;
+}
+.scorer-textarea {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: 1px solid #555;
+  color: transparent;
+  caret-color: #fff;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 8px;
+  box-sizing: border-box;
+  resize: none;
+  border-radius: 2px;
+  tab-size: 2;
+  z-index: 2;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+}
+.scorer-textarea:focus { border-color: #CC00FF; outline: none; }
+.scorer-highlight {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  background: #111;
+  border: 1px solid transparent;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 8px;
+  box-sizing: border-box;
+  border-radius: 2px;
+  tab-size: 2;
+  z-index: 1;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+  color: #ccc;
+}
+.scorer-highlight .sh-kw { color: #FF66FF; }
+.scorer-highlight .sh-num { color: #66FF66; }
+.scorer-highlight .sh-str { color: #FFAA44; }
+.scorer-highlight .sh-cmt { color: #44DD44; font-style: italic; }
+.scorer-highlight .sh-op { color: #EEEEEE; }
+.scorer-highlight .sh-fn { color: #FFFF66; }
+.scorer-highlight .sh-var { color: #66CCFF; }
+.scorer-highlight .sh-prop { color: #00FFCC; }
+.scorer-dropdown { position: relative; margin-top: 3px; }
+.scorer-dropdown-trigger {
+  width: 100%; padding: 4px 6px; background: #111; color: #CC00FF;
+  border: 1px solid #555; font-family: 'Press Start 2P', monospace; font-size: 7px;
+  cursor: pointer; box-sizing: border-box;
+}
+.scorer-dropdown-trigger::after {
+  content: '\25BC'; float: right; font-size: 5px; margin-top: 1px; color: #888;
+}
+.scorer-dropdown-menu {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 210;
+  background: #111; border: 1px solid #CC00FF; max-height: 200px; overflow-y: auto;
+  scrollbar-width: thin; scrollbar-color: #CC00FF #111;
+}
+.scorer-dropdown-menu.hidden { display: none; }
+.scorer-dropdown-group {
+  padding: 4px 6px; font-family: 'Press Start 2P', monospace; font-size: 6px;
+  color: #888; text-transform: uppercase; border-top: 1px solid #333;
+}
+.scorer-dropdown-group:first-child { border-top: none; }
+.scorer-dropdown-item {
+  padding: 4px 10px; font-family: 'Press Start 2P', monospace; font-size: 7px;
+  color: #CC00FF; cursor: pointer;
+}
+.scorer-dropdown-item:hover { background: rgba(204,0,255,0.2); }
+.scorer-status {
+  font-family: monospace;
+  font-size: 8px;
+  min-height: 14px;
+  margin: 6px 0;
+  padding: 4px;
+}
+.scorer-status.success { color: #00FF00; }
+.scorer-status.error { color: #FF4444; }
+.scorer-actions {
+  display: flex;
+  gap: 6px;
+}
+.scorer-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+  background: transparent;
+}
+.scorer-btn-apply { color: #CC00FF; border: 1px solid #CC00FF; }
+.scorer-btn-apply:hover { background: rgba(204,0,255,0.15); }
+.scorer-btn-clear { color: #FF8800; border: 1px solid #FF8800; }
+.scorer-btn-clear:hover { background: rgba(255,136,0,0.15); }
+.scorer-btn-close { color: #888; border: 1px solid #888; }
+.scorer-btn-close:hover { background: rgba(255,255,255,0.1); }
+
+.formula-modal.hidden { display: none; }
+.formula-modal-content {
+  background: #1a1a1a;
+  border: 2px solid #00FFFF;
+  box-shadow: 0 0 30px rgba(0,255,255,0.3);
+  padding: 16px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.formula-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.formula-close-btn {
+  font-size: 16px;
+  background: transparent;
+  color: #FF4444;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.formula-close-btn:hover { color: #FF8888; }
+.formula-help {
+  background: rgba(0,255,255,0.05);
+  border: 1px solid rgba(0,255,255,0.2);
+  padding: 8px;
+  margin-bottom: 12px;
+}
+.formula-help-title {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: #00FFFF;
+  margin-bottom: 6px;
+}
+.formula-var-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+.formula-var {
+  font-family: monospace;
+  font-size: 9px;
+  background: rgba(0,255,255,0.1);
+  color: #00FFFF;
+  padding: 2px 5px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,255,255,0.3);
+  cursor: help;
+}
+.formula-help-note {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  color: #888;
+  line-height: 1.6;
+}
+.formula-row { margin-bottom: 10px; position: relative; }
+.formula-label {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  color: #ccc;
+  display: block;
+  margin-bottom: 2px;
+}
+.formula-default {
+  font-family: monospace;
+  font-size: 8px;
+  color: #666;
+  margin-bottom: 2px;
+}
+.formula-range {
+  font-family: monospace;
+  font-size: 7px;
+  color: #888;
+  margin-bottom: 3px;
+  font-style: italic;
+}
+.formula-input {
+  font-family: monospace;
+  font-size: 10px;
+  background: #333;
+  color: #00FF00;
+  border: 1px solid #555;
+  padding: 5px 6px;
+  width: 100%;
+  outline: none;
+}
+.formula-input:focus {
+  border-color: #00FFFF;
+  box-shadow: 0 0 5px rgba(0,255,255,0.3);
+}
+.formula-input.invalid { border-color: #FF4444; color: #FF4444; }
+.formula-input.valid { border-color: #00FF00; }
+.formula-autocomplete {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #00FFFF;
+  border-top: none;
+  z-index: 10;
+  max-height: 120px;
+  overflow-y: auto;
+  display: none;
+}
+.formula-autocomplete-item {
+  font-family: monospace;
+  font-size: 10px;
+  padding: 4px 6px;
+  cursor: pointer;
+  color: #00FFFF;
+  display: flex;
+  justify-content: space-between;
+}
+.formula-autocomplete-item .ac-desc {
+  font-size: 7px;
+  color: #888;
+  margin-left: 8px;
+}
+.formula-autocomplete-item:hover,
+.formula-autocomplete-item.active {
+  background: rgba(0,255,255,0.15);
+}
+.formula-status {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 6px;
+  margin-top: 2px;
+  min-height: 10px;
+}
+.formula-status.ok { color: #00FF00; }
+.formula-status.err { color: #FF4444; }
+.formula-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.formula-btn {
+  font-family: 'Press Start 2P', cursive;
+  font-size: 7px;
+  background: transparent;
+  padding: 6px 10px;
+  cursor: pointer;
+  flex: 1;
+  text-align: center;
+}
+.formula-btn-validate { color: #FF8800; border: 1px solid #FF8800; }
+.formula-btn-validate:hover { background: rgba(255,136,0,0.15); }
+.formula-btn-reset { color: #FF4444; border: 1px solid #FF4444; }
+.formula-btn-reset:hover { background: rgba(255,68,68,0.15); }
+.formula-btn-save { color: #00FF00; border: 1px solid #00FF00; }
+.formula-btn-save:hover { background: rgba(0,255,0,0.15); }
+
+/* Responsive */
+@media (max-width: 799px) {
+  #game-layout {
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .center-column { order: -2; }
+  .side-panel-right { order: -1; }
+  .side-panel, .side-panel-right { width: 100%; max-width: 350px; }
+}
+</style>
+</head>
+<body>
+<div id="game-layout">
+  <!-- Left Panel -->
+  <div class="side-panel">
+    <div class="left-panel-section controls-list">
+      <div class="panel-heading">Controls</div>
+      <div class="control-row"><span class="key-label">Arrow Keys</span> Move / Drop</div>
+      <div class="control-row"><span class="key-label">Up / X</span> Rotate</div>
+      <div class="control-row"><span class="key-label">Space</span> Hard Drop</div>
+      <div class="control-row"><span class="key-label">C / Shift</span> Hold</div>
+      <div class="control-row"><span class="key-label">P / Esc</span> Pause; Show Board</div>
+      <div class="control-row"><span class="key-label">G</span> Ghost Toggle</div>
+      <div class="control-row"><span class="key-label">A</span> AI Autoplay</div>
+      <div class="control-row"><span class="key-label">V</span> AI Viz Toggle</div>
+      <div class="control-row"><span class="key-label">F</span> AI Formulas</div>
+      <div class="control-row"><span class="key-label">Shift+F</span> Custom Scorer</div>
+      <div class="control-row"><span class="key-label">S</span> Restart</div>
+    </div>
+    <div class="left-panel-section stats-section">
+      <div class="panel-heading">Statistics</div>
+      <div class="stat-row"><span class="stat-label">Score</span><span class="stat-value" id="stat-score">0</span></div>
+      <div class="stat-row"><span class="stat-label">Level</span><span class="stat-value" id="stat-level">1</span></div>
+      <div class="stat-row"><span class="stat-label">Lines</span><span class="stat-value" id="stat-lines">0</span></div>
+      <div class="stat-row"><span class="stat-label">Speed</span><span class="stat-value" id="stat-speed">1000ms</span></div>
+      <div class="stat-row"><span class="stat-label">AI Score</span><span class="stat-value" id="stat-ai-score">N/A</span></div>
+      <div class="stat-row"><span class="stat-label">I-Piece</span><span class="stat-value" id="stat-iprob">14.29% (1 in 7)</span></div>
+    </div>
+    <div class="left-panel-section stats-section high-score-section">
+      <div class="panel-heading">High Score</div>
+      <div class="stat-row"><span class="stat-label">Score</span><span class="stat-value" id="hi-score">0</span></div>
+      <div class="stat-row"><span class="stat-label">Lines</span><span class="stat-value" id="hi-lines">0</span></div>
+      <div class="stat-row"><span class="stat-label">Level</span><span class="stat-value" id="hi-level">1</span></div>
+      <button class="btn-reset-high" id="btn-reset-high">Reset High Score</button>
+    </div>
+    <div style="font-size:6px;color:#666;margin-top:12px;line-height:1.8;">Read the Participant Guide here: <a href="https://tetris.therayg.com/participant-guide.html" target="_blank" rel="noopener" style="color:#00FFFF;text-decoration:none;">tetris.therayg.com/participant-guide.html</a></div>
+  </div>
+
+  <!-- Center Column -->
+  <div class="center-column">
+    <div id="board-wrapper">
+      <div id="board-row-labels"></div>
+      <div id="game-board"></div>
+      <div id="board-col-labels"></div>
+      <!-- Overlays -->
+      <div class="overlay" id="title-screen">
+        <h1>TETRIS</h1>
+        <p>Press Start to Play</p>
+        <button class="btn" id="btn-start">Start Game</button>
+        <button class="btn" id="btn-replay" style="color:#FF8800;border-color:#FF8800;display:none;">Replay Piece Log</button>
+      </div>
+      <div class="overlay hidden" id="pause-screen">
+        <h2>Paused</h2>
+        <button class="btn" id="btn-resume">Resume</button>
+      </div>
+      <div class="overlay hidden" id="gameover-screen">
+        <h2>Game Over!</h2>
+        <p id="go-score"></p>
+        <p id="go-lines"></p>
+        <p id="go-level"></p>
+        <button class="btn" id="btn-restart">Restart</button>
+        <button class="btn" id="btn-replay-go" style="color:#FF8800;border-color:#FF8800;display:none;">Replay Piece Log</button>
+      </div>
+      <div style="position:absolute;bottom:-20px;left:0;right:0;text-align:center;font-size:5px;color:rgba(255,255,255,0.2);">v20260414</div>
+    </div>
+    <div class="preview-sidebar">
+      <div class="preview-box">
+        <div class="preview-label">Next</div>
+        <div class="preview-grid" id="next-preview"></div>
+        <div id="replay-remaining" style="display:none;font-family:'Press Start 2P',cursive;font-size:8px;color:#FF8800;text-align:center;margin-top:4px;"></div>
+      </div>
+      <div class="preview-box">
+        <div class="preview-label">Hold</div>
+        <div class="preview-grid" id="hold-preview"></div>
+      </div>
+      <div class="touch-panel">
+        <div class="panel-heading">Actions</div>
+        <div class="touch-actions">
+          <button class="touch-btn" id="touch-ai">AI</button>
+          <button class="touch-btn" id="touch-pause">Pause</button>
+          <button class="touch-btn" id="touch-restart">Reset</button>
+        </div>
+        <div class="touch-dpad">
+          <div class="touch-dpad-row">
+            <div class="touch-dpad-spacer"></div>
+            <button class="touch-dpad-btn" id="touch-up">&#9650;</button>
+            <div class="touch-dpad-spacer"></div>
+          </div>
+          <div class="touch-dpad-row">
+            <button class="touch-dpad-btn" id="touch-left">&#9664;</button>
+            <button class="touch-dpad-btn" id="touch-down">&#9660;</button>
+            <button class="touch-dpad-btn" id="touch-right">&#9654;</button>
+          </div>
+          <button class="touch-dpad-wide" id="touch-space">DROP</button>
+        </div>
+      </div>
+      <div class="seed-panel">
+        <div class="panel-heading">Random Seed</div>
+        <div class="seed-row">
+          <input type="text" id="seed-input" class="seed-input" inputmode="numeric" pattern="[0-9]*" value="0">
+          <button class="seed-randomize-btn" id="seed-randomize" title="Generate random seed">&#x1f3b2;</button>
+        </div>
+        <div class="seed-hint">0 = random each game</div>
+      </div>
+      <div class="seed-panel" style="margin-top:6px;">
+        <div class="panel-heading">Team Name</div>
+        <input type="text" id="team-name" class="seed-input" style="width:100%;box-sizing:border-box;" placeholder="Enter team name" maxlength="50">
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel -->
+  <div class="side-panel-right">
+    <div class="ai-viz-container">
+      <div class="panel-header">
+        <span class="panel-heading">AI VIZUALIZATION</span>
+        <span class="badge viz-on" id="viz-badge">Viz ON</span>
+      </div>
+      <div id="viz-content">
+        <div class="heatmap-section">
+          <div class="heatmap-label" id="heatmap-current-label">Current Piece</div>
+          <div id="heatmap-current" class="heatmap-grid"></div>
+        </div>
+        <div class="heatmap-section">
+          <div class="heatmap-label" id="heatmap-hold-label">Hold Piece</div>
+          <div id="heatmap-hold" class="heatmap-grid"></div>
+        </div>
+        <div class="score-breakdown" id="score-breakdown">
+          <div class="score-breakdown-header" id="breakdown-header">Best Move</div>
+          <div id="breakdown-rows"></div>
+        </div>
+      </div>
+    </div>
+    <div class="ai-tuning-panel">
+      <div class="panel-header">
+        <span class="panel-heading">AI Tuning</span>
+        <span class="badge ai-on" id="ai-badge">AI ON</span>
+      </div>
+      <div class="tuning-delay-row">
+        <label>Autoplay Delay</label>
+        <div id="delay-dropdown" class="delay-dropdown">
+          <div id="delay-dropdown-trigger" class="delay-dropdown-trigger">200ms</div>
+          <div id="delay-dropdown-menu" class="delay-dropdown-menu hidden">
+            <div class="delay-dropdown-item" data-value="10">10ms</div>
+            <div class="delay-dropdown-item" data-value="20">20ms</div>
+            <div class="delay-dropdown-item" data-value="100">100ms</div>
+            <div class="delay-dropdown-item selected" data-value="200">200ms</div>
+            <div class="delay-dropdown-item" data-value="500">500ms</div>
+            <div class="delay-dropdown-item" data-value="1000">1000ms</div>
+          </div>
+        </div>
+      </div>
+      <div class="tuning-grid">
+        <div class="tuning-item">
+          <div class="tuning-label-row"><label>Lines</label><span class="tuning-value" id="val-lines">2.0</span></div>
+          <input type="range" id="weight-lines" min="0" max="2" step="0.1" value="2.0">
+        </div>
+        <div class="tuning-item">
+          <div class="tuning-label-row"><label>Holes</label><span class="tuning-value" id="val-holes">-0.6</span></div>
+          <input type="range" id="weight-holes" min="-2" max="0" step="0.1" value="-0.6">
+        </div>
+        <div class="tuning-item">
+          <div class="tuning-label-row"><label>Bump</label><span class="tuning-value" id="val-bumpiness">-0.8</span></div>
+          <input type="range" id="weight-bumpiness" min="-1" max="0" step="0.1" value="-0.8">
+        </div>
+        <div class="tuning-item">
+          <div class="tuning-label-row"><label>Height</label><span class="tuning-value" id="val-height">-0.10</span></div>
+          <input type="range" id="weight-height" min="-0.1" max="0" step="0.01" value="-0.10">
+        </div>
+        <div class="tuning-item">
+          <div class="tuning-label-row"><label>Valley</label><span class="tuning-value" id="val-valley">-1.0</span></div>
+          <input type="range" id="weight-valley" min="-1" max="0" step="0.1" value="-1.0">
+        </div>
+        <div class="tuning-item" id="topn-container" style="display:none;">
+          <div class="tuning-label-row"><label>Top N</label><span class="tuning-value" id="val-overlayTopN">1</span></div>
+          <input type="range" id="weight-overlayTopN" min="1" max="5" step="1" value="1">
+        </div>
+      </div>
+      <button class="btn-reset-weights" id="btn-reset-weights" style="margin-bottom:8px;">Reset Default Weights</button>
+      <div class="sim-btn-row">
+        <button class="btn-reset-weights" id="btn-train-weights" style="color:#00FF00;border-color:#00FF00;display:none;">Train (CEM)</button>
+        <button class="btn-reset-weights" id="btn-simulate" style="color:#00FFFF;border-color:#00FFFF;">Simulate</button>
+      </div>
+      <button class="btn-reset-weights" id="btn-custom-formulas" style="color:#FF8800;border-color:#FF8800;">Customize Formulas</button>
+      <button class="btn-reset-weights" id="btn-custom-scorer" style="color:#CC00FF;border-color:#CC00FF;">Custom Scorer</button>
+      <div class="tuning-export-row">
+        <div style="position:relative;flex:1;display:flex;">
+          <button class="btn-reset-weights" id="btn-export-ai" style="color:#00CCFF;border-color:#00CCFF;width:100%;">Export</button>
+          <div id="export-ai-menu" class="export-menu hidden">
+            <div class="export-menu-item" data-ext="json">Save as .json</div>
+            <div class="export-menu-item" data-ext="txt">Save as .txt</div>
+          </div>
+        </div>
+        <button class="btn-reset-weights" id="btn-import-ai" style="color:#00CCFF;border-color:#00CCFF;">Import</button>
+      </div>
+      <input type="file" id="import-file-input" accept=".json,.txt" style="display:none;">
+      <input type="file" id="replay-file-input" accept=".json,.txt" style="display:none;">
+    </div>
+  </div>
+</div>
+
+<div id="heatmap-tooltip"></div>
+
+<div id="formula-modal" class="formula-modal hidden">
+  <div class="formula-modal-content">
+    <div class="formula-modal-header">
+      <span class="panel-heading">AI FORMULA CUSTOMIZATION</span>
+      <button class="formula-close-btn" id="formula-close">&times;</button>
+    </div>
+    <div class="formula-help">
+      <div class="formula-help-title">Available Variables:</div>
+      <div class="formula-help-note" style="margin-bottom:4px;">Metrics:</div>
+      <div class="formula-var-list">
+        <span class="formula-var" data-tip="Lines cleared by this placement">lines</span>
+        <span class="formula-var" data-tip="Trapped empty cells below filled cells">holes</span>
+        <span class="formula-var" data-tip="Sum of adjacent column height differences">bump</span>
+        <span class="formula-var" data-tip="Sum of all column heights">height</span>
+        <span class="formula-var" data-tip="Total depth of valleys between columns">valley</span>
+      </div>
+      <div class="formula-help-note" style="margin-bottom:4px;">Weights:</div>
+      <div class="formula-var-list">
+        <span class="formula-var" data-tip="Lines weight slider value">wLines</span>
+        <span class="formula-var" data-tip="Holes weight slider value">wHoles</span>
+        <span class="formula-var" data-tip="Bumpiness weight slider value">wBump</span>
+        <span class="formula-var" data-tip="Height weight slider value">wHeight</span>
+        <span class="formula-var" data-tip="Valley weight slider value">wValley</span>
+      </div>
+      <div class="formula-help-note" style="margin-bottom:4px;">Total Score also gets:</div>
+      <div class="formula-var-list">
+        <span class="formula-var" data-tip="Output of Lines Score formula">linesScore</span>
+        <span class="formula-var" data-tip="Output of Holes Score formula">holesScore</span>
+        <span class="formula-var" data-tip="Output of Bump Score formula">bumpScore</span>
+        <span class="formula-var" data-tip="Output of Height Score formula">heightScore</span>
+        <span class="formula-var" data-tip="Output of Valley Score formula">valleyScore</span>
+        <span class="formula-var" data-tip="Game-over penalty: -100000 or 0">goPenalty</span>
+      </div>
+      <div class="formula-help-note">Operators: + - * / ^ ( ) and numbers. Leave blank for default.</div>
+    </div>
+    <div class="formula-inputs">
+      <div class="formula-row">
+        <label class="formula-label">Lines Score</label>
+        <div class="formula-default">Default: lines * wLines * 100</div>
+        <div class="formula-range" id="formula-range-lines"></div>
+        <input type="text" class="formula-input" id="formula-lines" placeholder="lines * wLines * 100" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-lines"></div>
+        <div class="formula-status" id="formula-status-lines"></div>
+      </div>
+      <div class="formula-row">
+        <label class="formula-label">Holes Score</label>
+        <div class="formula-default">Default: holes * wHoles * 5</div>
+        <div class="formula-range" id="formula-range-holes"></div>
+        <input type="text" class="formula-input" id="formula-holes" placeholder="holes * wHoles * 5" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-holes"></div>
+        <div class="formula-status" id="formula-status-holes"></div>
+      </div>
+      <div class="formula-row">
+        <label class="formula-label">Bump Score</label>
+        <div class="formula-default">Default: bump * wBump</div>
+        <div class="formula-range" id="formula-range-bump"></div>
+        <input type="text" class="formula-input" id="formula-bump" placeholder="bump * wBump" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-bump"></div>
+        <div class="formula-status" id="formula-status-bump"></div>
+      </div>
+      <div class="formula-row">
+        <label class="formula-label">Height Score</label>
+        <div class="formula-default">Default: height * wHeight</div>
+        <div class="formula-range" id="formula-range-height"></div>
+        <input type="text" class="formula-input" id="formula-height" placeholder="height * wHeight" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-height"></div>
+        <div class="formula-status" id="formula-status-height"></div>
+      </div>
+      <div class="formula-row">
+        <label class="formula-label">Valley Score</label>
+        <div class="formula-default">Default: valley * wValley</div>
+        <div class="formula-range" id="formula-range-valley"></div>
+        <input type="text" class="formula-input" id="formula-valley" placeholder="valley * wValley" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-valley"></div>
+        <div class="formula-status" id="formula-status-valley"></div>
+      </div>
+      <div class="formula-row">
+        <label class="formula-label">Total Score</label>
+        <div class="formula-default">Default: linesScore + holesScore + bumpScore + heightScore + valleyScore + goPenalty</div>
+        <div class="formula-range" id="formula-range-total"></div>
+        <input type="text" class="formula-input" id="formula-total" placeholder="linesScore + holesScore + bumpScore + heightScore + valleyScore + goPenalty" spellcheck="false" autocomplete="off">
+        <div class="formula-autocomplete" id="formula-ac-total"></div>
+        <div class="formula-status" id="formula-status-total"></div>
+      </div>
+    </div>
+    <div class="formula-actions">
+      <button class="formula-btn formula-btn-validate" id="formula-validate">Validate All</button>
+      <button class="formula-btn formula-btn-reset" id="formula-reset">Reset Defaults</button>
+      <button class="formula-btn formula-btn-save" id="formula-save">Save &amp; Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="cem-modal" class="cem-modal hidden">
+  <div class="cem-modal-content">
+    <div class="cem-modal-header">
+      <span class="panel-heading">CEM WEIGHT TRAINING</span>
+      <span id="cem-close-x" style="color:#888;cursor:pointer;font-size:16px;">&times;</span>
+    </div>
+    <div class="cem-params">
+      <div class="cem-param-group">
+        <label>Candidates</label>
+        <input type="number" id="cem-param-pop" value="30" min="5" max="200">
+      </div>
+      <div class="cem-param-group">
+        <label>Generations</label>
+        <input type="number" id="cem-param-gens" value="30" min="1" max="200">
+      </div>
+      <div class="cem-param-group">
+        <label>Pieces/Game</label>
+        <input type="number" id="cem-param-pieces" value="300" min="50" max="5000">
+      </div>
+    </div>
+    <div class="cem-actions" id="cem-start-row">
+      <button class="cem-btn cem-btn-start" id="cem-start">Start Training</button>
+    </div>
+    <div class="cem-progress-bar"><div class="cem-progress-fill" id="cem-progress"></div></div>
+    <div class="cem-stat-row"><span>Generation</span><span class="cem-val" id="cem-gen">0 / 30</span></div>
+    <div class="cem-stat-row"><span>Candidate</span><span class="cem-val" id="cem-cand">0 / 30</span></div>
+    <div class="cem-stat-row"><span>Best Fitness (lines)</span><span class="cem-val" id="cem-best-fit">--</span></div>
+    <div class="cem-stat-row"><span>Current Gen Best</span><span class="cem-val" id="cem-gen-best">--</span></div>
+    <div class="cem-weights-preview" id="cem-weights-preview">
+      Best weights: <span>--</span>
+    </div>
+    <div class="cem-status" id="cem-status">Initializing...</div>
+    <div class="cem-actions">
+      <button class="cem-btn cem-btn-stop" id="cem-stop">Stop Early</button>
+      <button class="cem-btn cem-btn-close" id="cem-close" disabled>Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="sim-modal" class="cem-modal hidden">
+  <div class="cem-modal-content">
+    <div class="cem-modal-header">
+      <span class="panel-heading">AI SIMULATION</span>
+      <span id="sim-close-x" style="color:#888;cursor:pointer;font-size:16px;">&times;</span>
+    </div>
+    <div class="cem-stat-row"><span>Seed</span><span class="cem-val" id="sim-seed">-</span></div>
+    <div class="cem-stat-row"><span style="color:#FFD700;font-size:14px;">Lines</span><span class="cem-val" id="sim-lines" style="color:#FFD700;font-size:14px;">0</span></div>
+    <div class="cem-stat-row"><span>Score</span><span class="cem-val" id="sim-score">0</span></div>
+    <div class="cem-stat-row"><span>Level</span><span class="cem-val" id="sim-level">1</span></div>
+    <div class="cem-stat-row"><span>Pieces</span><span class="cem-val" id="sim-pieces">0</span></div>
+    <div class="cem-stat-row"><span>Cumulative AI Score</span><span class="cem-val" id="sim-ai-score">0</span></div>
+    <div class="cem-stat-row"><span>I-Piece Probability</span><span class="cem-val" id="sim-iprob">14.29% (1 in 7)</span></div>
+    <div class="cem-stat-row"><span>Premature Locks</span><span class="cem-val" id="sim-premature">0</span></div>
+    <div class="cem-stat-row"><span>Elapsed Time</span><span class="cem-val" id="sim-elapsed">—</span></div>
+    <pre id="sim-board" style="font-family:'Courier New',Courier,monospace;font-size:10px;line-height:1.2;color:#888;margin:8px 0;text-align:center;letter-spacing:0;"></pre>
+    <div class="cem-status" id="sim-status">Running...</div>
+    <div class="cem-actions">
+      <button class="cem-btn cem-btn-stop" id="sim-stop">Stop</button>
+      <div style="position:relative;display:inline-block;">
+        <button class="cem-btn" id="sim-export" style="background:#00FFFF;color:#000;" disabled>Export</button>
+        <div id="export-sim-menu" class="export-menu hidden">
+          <div class="export-menu-item" data-ext="json">Save as .json</div>
+          <div class="export-menu-item" data-ext="txt">Save as .txt</div>
+        </div>
+      </div>
+      <div id="sim-export-log-wrap" style="position:relative;display:none;">
+        <button class="cem-btn" id="sim-export-log" style="background:#FF8800;color:#000;" disabled>Piece Log</button>
+        <div id="export-sim-log-menu" class="export-menu hidden">
+          <div class="export-menu-item" data-ext="json">Save as .json</div>
+          <div class="export-menu-item" data-ext="txt">Save as .txt</div>
+        </div>
+      </div>
+      <button class="cem-btn cem-btn-close" id="sim-close" disabled>Close</button>
+    </div>
+    <div class="cem-stat-row" style="margin-top:10px;"><span style="color:#555;">Config Fingerprint</span><span class="cem-val" id="sim-fingerprint" style="font-size:9px;color:#555;">—</span></div>
+  </div>
+</div>
+
+<div id="scorer-modal" class="scorer-modal hidden">
+  <div class="scorer-modal-content">
+    <div class="scorer-modal-header">
+      <span class="panel-heading" style="color:#CC00FF;">CUSTOM SCORER</span>
+      <span id="scorer-close-x" style="color:#888;cursor:pointer;font-size:16px;">&times;</span>
+    </div>
+    <div class="scorer-desc">
+      <code style="color:#CC00FF;font-size:8px;">function(board, linesCleared) { ... }</code><br>
+      <code>board</code> — 2D array (20&times;10), 0 = empty, non-zero = filled<br>
+      <code>linesCleared</code> — lines cleared by this placement (0&ndash;4)<br>
+      Write the function body below. Return a number (positive = good, negative = bad).<br>
+      The returned value is <strong style="color:#CC00FF">added</strong> to the default AI score.
+    </div>
+    <div style="margin:6px 0 4px;">
+      <label style="font-size:7px;color:#888;">BUILT-IN STRATEGIES:</label>
+      <div id="scorer-preset-wrapper" class="scorer-dropdown">
+        <div id="scorer-preset-trigger" class="scorer-dropdown-trigger">— Select a strategy —</div>
+        <div id="scorer-preset-menu" class="scorer-dropdown-menu hidden">
+          <div class="scorer-dropdown-group">Surface &amp; Shape</div>
+          <div class="scorer-dropdown-item" data-value="flat">Keep it flat</div>
+          <div class="scorer-dropdown-item" data-value="rightclear">Keep the right column clear</div>
+          <div class="scorer-dropdown-item" data-value="smooth">Smooth surface</div>
+          <div class="scorer-dropdown-group">Line Clear</div>
+          <div class="scorer-dropdown-item" data-value="tetris">Tetris bonus</div>
+          <div class="scorer-dropdown-item" data-value="patience">Patience pays</div>
+          <div class="scorer-dropdown-group">Hole &amp; Gap Management</div>
+          <div class="scorer-dropdown-item" data-value="deephole">Deep hole detector</div>
+          <div class="scorer-dropdown-item" data-value="covered">Covered holes are worse</div>
+          <div class="scorer-dropdown-item" data-value="leftprotect">No holes in first 4 columns</div>
+          <div class="scorer-dropdown-group">Height &amp; Safety</div>
+          <div class="scorer-dropdown-item" data-value="danger">Danger zone alarm</div>
+          <div class="scorer-dropdown-item" data-value="headroom">Keep headroom</div>
+          <div class="scorer-dropdown-group">Pattern &amp; Structure</div>
+          <div class="scorer-dropdown-item" data-value="completable">Completable rows</div>
+          <div class="scorer-dropdown-item" data-value="balance">Column balance</div>
+          <div class="scorer-dropdown-item" data-value="edgewall">Edge wall builder</div>
+          <div class="scorer-dropdown-item" data-value="density">Row density gradient</div>
+          <div class="scorer-dropdown-group">Advanced Combinations</div>
+          <div class="scorer-dropdown-item" data-value="survivor">The Survivor</div>
+          <div class="scorer-dropdown-item" data-value="gambler">The Gambler</div>
+        </div>
+      </div>
+    </div>
+    <div class="scorer-editor-wrap" id="scorer-editor-wrap">
+      <pre class="scorer-highlight" id="scorer-highlight"></pre>
+      <textarea class="scorer-textarea" id="scorer-code" spellcheck="false" placeholder="// Example: reward Tetris clears&#10;if (linesCleared === 4) return 500;&#10;return 0;"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:6px;margin:2px 0 4px;">
+      <button id="scorer-undo" style="padding:2px 8px;background:rgba(255,255,255,0.08);border:1px solid #555;color:#888;font-family:'Press Start 2P',monospace;font-size:6px;cursor:pointer;border-radius:3px;" title="Undo (Ctrl+Z)">Undo</button>
+      <button id="scorer-redo" style="padding:2px 8px;background:rgba(255,255,255,0.08);border:1px solid #555;color:#888;font-family:'Press Start 2P',monospace;font-size:6px;cursor:pointer;border-radius:3px;" title="Redo (Ctrl+Y)">Redo</button>
+    </div>
+    <div class="scorer-status" id="scorer-status"></div>
+    <div class="scorer-actions">
+      <button class="scorer-btn scorer-btn-apply" id="scorer-apply">Apply</button>
+      <button class="scorer-btn scorer-btn-clear" id="scorer-clear">Clear</button>
+      <button class="scorer-btn scorer-btn-close" id="scorer-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== CONSTANTS =====
+const BOARD_WIDTH = 10;
+const BOARD_HEIGHT = 20;
+const CELL_SIZE = 22;
+
+const PIECE_COLORS = ['#00FFFF','#FFFF00','#AA00FF','#00FF00','#FF0000','#0000FF','#FF8800'];
+const PIECE_NAMES = ['I','O','T','S','Z','J','L'];
+
+const TETROMINOS = [
+  [[1,1,1,1]],                           // I
+  [[1,1],[1,1]],                          // O
+  [[0,1,0],[1,1,1]],                      // T
+  [[0,1,1],[1,1,0]],                      // S
+  [[1,1,0],[0,1,1]],                      // Z
+  [[1,0,0],[1,1,1]],                      // J
+  [[0,0,1],[1,1,1]]                       // L
+];
+
+const DEFAULT_WEIGHTS = {
+  lines: 2.0, holes: -0.6, bumpiness: -0.8, height: -0.10, valley: -1.0
+};
+const DEFAULT_TOP_N = 1;
+
+// ===== GAME STATE =====
+let board = [];
+let currentPiece = null;
+let currentX = 0, currentY = 0;
+let currentRotation = 0;
+let currentType = 0;
+let nextType = 0;
+let holdType = -1;
+let canHold = true;
+let ghostEnabled = true;
+let score = 0, level = 1, lines = 0, levelLines = 0;
+let gameActive = false, gamePaused = false, gameOver = false;
+let dropInterval = null;
+let lockDelayTimer = null;
+let dropSpeed = 1000;
+
+// Replay State
+let replayMode = false;
+let replayPieceQueue = [];   // array of piece type indices (0-6)
+let replayQueueIndex = 0;
+
+// AI State
+let autoplayEnabled = true;
+let autoplayTimers = [];
+let autoplayDelay = 200;
+let vizEnabled = true;
+let advancedToolsVisible = false;
+let lastAIEvaluation = null;
+
+// AI Weights
+let weights = { ...DEFAULT_WEIGHTS };
+let overlayTopN = DEFAULT_TOP_N;
+
+// Custom Formula State
+let customFormulas = { lines: '', holes: '', bump: '', height: '', valley: '', total: '' };
+let compiledFormulas = { lines: null, holes: null, bump: null, height: null, valley: null, total: null };
+
+// Custom Scorer State
+let customScorerCode = '';
+let gameZoomScale = 1;
+let customScorerFn = null;
+
+// Seeded Random
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+let gameSeed = 0;
+let seededRandom = null;
+
+// Metric Score Ranges (tracked per game)
+const METRIC_KEYS = ['lines', 'holes', 'bumpiness', 'height', 'valley'];
+let metricScoreRanges = {};
+function resetMetricScoreRanges() {
+  metricScoreRanges = {};
+  METRIC_KEYS.forEach(k => { metricScoreRanges[k] = { min: Infinity, max: -Infinity }; });
+  metricScoreRanges.total = { min: Infinity, max: -Infinity };
+}
+resetMetricScoreRanges();
+
+// High Score
+let highScore = { score: 0, lines: 0, level: 1 };
+
+// ===== DOM REFS =====
+const boardEl = document.getElementById('game-board');
+const nextPreviewEl = document.getElementById('next-preview');
+const holdPreviewEl = document.getElementById('hold-preview');
+const titleScreen = document.getElementById('title-screen');
+const pauseScreen = document.getElementById('pause-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+const tooltipEl = document.getElementById('heatmap-tooltip');
+
+// ===== INITIALIZATION =====
+function initBoard() {
+  board = [];
+  for (let r = 0; r < BOARD_HEIGHT; r++) {
+    board.push(new Array(BOARD_WIDTH).fill(0));
+  }
+}
+
+function createBoardDOM() {
+  boardEl.innerHTML = '';
+  for (let i = 0; i < BOARD_WIDTH * BOARD_HEIGHT; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    boardEl.appendChild(cell);
+  }
+  // Row labels (0-19, top to bottom)
+  const rowLabelsEl = document.getElementById('board-row-labels');
+  rowLabelsEl.innerHTML = '';
+  for (let r = 0; r < BOARD_HEIGHT; r++) {
+    const span = document.createElement('span');
+    span.textContent = r;
+    rowLabelsEl.appendChild(span);
+  }
+  // Column labels (0-9, left to right)
+  const colLabelsEl = document.getElementById('board-col-labels');
+  colLabelsEl.innerHTML = '';
+  for (let c = 0; c < BOARD_WIDTH; c++) {
+    const span = document.createElement('span');
+    span.textContent = c;
+    colLabelsEl.appendChild(span);
+  }
+}
+
+function createPreviewDOM(el) {
+  el.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    el.appendChild(cell);
+  }
+}
+
+// ===== PIECE HELPERS =====
+function rotateMatrix(matrix) {
+  const rows = matrix.length, cols = matrix[0].length;
+  const result = [];
+  for (let c = 0; c < cols; c++) {
+    result.push([]);
+    for (let r = rows - 1; r >= 0; r--) {
+      result[c].push(matrix[r][c]);
+    }
+  }
+  return result;
+}
+
+// Pre-compute all 7 pieces × 4 rotations = 28 shapes (avoids cloning + rotating on every call)
+const PIECE_SHAPES = TETROMINOS.map(base => {
+  const rotations = [base.map(r => [...r])];
+  for (let i = 1; i < 4; i++) {
+    rotations.push(rotateMatrix(rotations[i - 1]));
+  }
+  return rotations;
+});
+
+function getPieceShape(type, rotation) {
+  return PIECE_SHAPES[type][rotation % 4];
+}
+
+function spawnPiece(type) {
+  currentType = type;
+  currentRotation = 0;
+  currentPiece = getPieceShape(type, 0);
+  currentX = Math.floor((BOARD_WIDTH - currentPiece[0].length) / 2);
+  currentY = 0;
+  canHold = true;
+}
+
+function randomPieceType() {
+  const rng = seededRandom || Math.random;
+  if (level < 40) return Math.floor(rng() * 7);
+  // From level 40+, I-piece (index 0) becomes progressively rarer
+  const levelsAbove = level - 39;
+  const iProb = Math.max(0, 1 / 7 - levelsAbove * 0.0006);
+  const otherProb = (1 - iProb) / 6;
+  const r = rng();
+  let cumulative = iProb;
+  if (r < cumulative) return 0;
+  for (let i = 1; i < 7; i++) {
+    cumulative += otherProb;
+    if (r < cumulative) return i;
+  }
+  return 6;
+}
+
+function updateReplayRemaining() {
+  const el = document.getElementById('replay-remaining');
+  if (replayMode) {
+    const remaining = replayPieceQueue.length - replayQueueIndex;
+    el.textContent = remaining + ' left';
+    el.style.display = '';
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+function getNextPieceType() {
+  if (replayMode) {
+    if (replayQueueIndex < replayPieceQueue.length) {
+      const type = replayPieceQueue[replayQueueIndex++];
+      updateReplayRemaining();
+      return type;
+    }
+    updateReplayRemaining();
+    return -1;  // signal: log exhausted
+  }
+  return randomPieceType();
+}
+
+// ===== COLLISION =====
+function collides(shape, offX, offY, boardState) {
+  boardState = boardState || board;
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (!shape[r][c]) continue;
+      const nx = offX + c, ny = offY + r;
+      if (nx < 0 || nx >= BOARD_WIDTH || ny >= BOARD_HEIGHT) return true;
+      if (ny >= 0 && boardState[ny][nx]) return true;
+    }
+  }
+  return false;
+}
+
+// ===== MOVEMENT =====
+function moveLeft() {
+  if (!collides(currentPiece, currentX - 1, currentY)) { currentX--; drawBoard(); }
+}
+function moveRight() {
+  if (!collides(currentPiece, currentX + 1, currentY)) { currentX++; drawBoard(); }
+}
+function moveDown() {
+  if (!collides(currentPiece, currentX, currentY + 1)) {
+    currentY++;
+    score += 1;
+    updateStats();
+    drawBoard();
+  } else {
+    lockPiece();
+  }
+}
+function hardDrop() {
+  let dist = 0;
+  while (!collides(currentPiece, currentX, currentY + 1)) {
+    currentY++;
+    dist++;
+  }
+  score += dist * 2;
+  clearLockDelay();
+  lockPiece();
+}
+
+function rotate() {
+  const newRot = (currentRotation + 1) % 4;
+  const newShape = getPieceShape(currentType, newRot);
+  const kicks = [0, -1, 1, -2, 2];
+  for (const kick of kicks) {
+    const nx = currentX + kick;
+    // bounds check
+    let inBounds = true;
+    for (let r = 0; r < newShape.length; r++) {
+      for (let c = 0; c < newShape[r].length; c++) {
+        if (!newShape[r][c]) continue;
+        const bx = nx + c;
+        if (bx < 0 || bx >= BOARD_WIDTH) { inBounds = false; break; }
+      }
+      if (!inBounds) break;
+    }
+    if (!inBounds) continue;
+    if (!collides(newShape, nx, currentY)) {
+      currentX = nx;
+      currentRotation = newRot;
+      currentPiece = newShape;
+      drawBoard();
+      return;
+    }
+  }
+}
+
+// ===== LOCK & CLEAR =====
+function lockPiece() {
+  clearLockDelay();
+  for (let r = 0; r < currentPiece.length; r++) {
+    for (let c = 0; c < currentPiece[r].length; c++) {
+      if (!currentPiece[r][c]) continue;
+      const by = currentY + r, bx = currentX + c;
+      if (by < 0) {
+        triggerGameOver();
+        return;
+      }
+      board[by][bx] = currentType + 1;
+    }
+  }
+  const cleared = clearLines();
+  if (cleared > 0) {
+    const pts = [0, 100, 300, 500, 800];
+    score += pts[cleared] * level;
+    lines += cleared;
+    levelLines += cleared;
+    checkLevelUp();
+  }
+  updateStats();
+  checkHighScore();
+  nextPiece();
+}
+
+function clearLines() {
+  let cleared = 0;
+  for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+    if (board[y].every(c => c !== 0)) {
+      board.splice(y, 1);
+      board.unshift(new Array(BOARD_WIDTH).fill(0));
+      y++;
+      cleared++;
+    }
+  }
+  return cleared;
+}
+
+function checkLevelUp() {
+  const thresholds = () => {
+    if (level < 10) return 10;
+    if (level < 20) return 12;
+    if (level < 30) return 14;
+    if (level < 40) return 16;
+    if (level < 50) return 18;
+    return 20;
+  };
+  let t = thresholds();
+  while (levelLines >= t) {
+    levelLines -= t;
+    level++;
+    t = thresholds();
+  }
+  dropSpeed = Math.max(50, 1000 - (level - 1) * 25);
+  restartDropInterval();
+}
+
+function nextPiece() {
+  if (replayMode && nextType === -1) {
+    triggerReplayEnd();
+    return;
+  }
+  spawnPiece(nextType);
+  nextType = getNextPieceType();
+  if (collides(currentPiece, currentX, currentY)) {
+    triggerGameOver();
+    return;
+  }
+  drawBoard();
+  renderPreview(nextPreviewEl, nextType);
+  if (autoplayEnabled && gameActive && !gamePaused && !gameOver) {
+    scheduleAutoplayMove();
+  }
+}
+
+// ===== LOCK DELAY =====
+function startLockDelay() {
+  if (lockDelayTimer !== null) return;
+  lockDelayTimer = setTimeout(() => {
+    lockDelayTimer = null;
+    if (gameActive && !gamePaused && !gameOver) {
+      if (!collides(currentPiece, currentX, currentY + 1)) {
+        // Piece is no longer resting (e.g. rotated into open space) — let gravity resume
+        return;
+      }
+      lockPiece();
+    }
+  }, dropSpeed);
+}
+
+function clearLockDelay() {
+  if (lockDelayTimer !== null) {
+    clearTimeout(lockDelayTimer);
+    lockDelayTimer = null;
+  }
+}
+
+// ===== HOLD =====
+function holdPiece() {
+  if (!canHold) return;
+  canHold = false;
+  clearLockDelay();
+  const prevType = currentType;
+  if (holdType === -1) {
+    holdType = prevType;
+    if (replayMode && nextType === -1) {
+      triggerReplayEnd();
+      return;
+    }
+    spawnPiece(nextType);
+    nextType = getNextPieceType();
+    renderPreview(nextPreviewEl, nextType);
+  } else {
+    const tmp = holdType;
+    holdType = prevType;
+    spawnPiece(tmp);
+  }
+  if (collides(currentPiece, currentX, currentY)) {
+    triggerGameOver();
+    return;
+  }
+  renderPreview(holdPreviewEl, holdType);
+  drawBoard();
+  if (autoplayEnabled && gameActive && !gamePaused && !gameOver) {
+    scheduleAutoplayMove();
+  }
+}
+
+// ===== GHOST =====
+function getGhostY() {
+  let gy = currentY;
+  while (!collides(currentPiece, currentX, gy + 1)) gy++;
+  return gy;
+}
+
+// ===== DROP INTERVAL =====
+function startDropInterval() {
+  clearInterval(dropInterval);
+  dropInterval = setInterval(autoDown, dropSpeed);
+}
+
+function restartDropInterval() {
+  startDropInterval();
+}
+
+function stopDropInterval() {
+  clearInterval(dropInterval);
+  dropInterval = null;
+}
+
+function autoDown() {
+  if (!gameActive || gamePaused || gameOver) return;
+  if (!collides(currentPiece, currentX, currentY + 1)) {
+    currentY++;
+    drawBoard();
+  } else {
+    startLockDelay();
+  }
+}
+
+// ===== RENDERING =====
+function drawBoard() {
+  const cells = boardEl.children;
+  // 1. Locked blocks
+  for (let r = 0; r < BOARD_HEIGHT; r++) {
+    for (let c = 0; c < BOARD_WIDTH; c++) {
+      const cell = cells[r * BOARD_WIDTH + c];
+      cell.className = 'cell';
+      cell.style.background = '';
+      cell.style.border = '';
+      cell.style.opacity = '';
+      cell.style.boxShadow = '';
+      cell.style.outline = '';
+      if (board[r][c]) {
+        cell.classList.add('filled');
+        cell.style.background = PIECE_COLORS[board[r][c] - 1];
+      }
+    }
+  }
+
+  // 2. Overlay placements (top N)
+  if (vizEnabled && lastAIEvaluation && lastAIEvaluation.allPlacements) {
+    renderOverlayPlacements(cells);
+  }
+
+  // 3. Ghost piece
+  if (ghostEnabled && currentPiece) {
+    const gy = getGhostY();
+    if (gy !== currentY) {
+      for (let r = 0; r < currentPiece.length; r++) {
+        for (let c = 0; c < currentPiece[r].length; c++) {
+          if (!currentPiece[r][c]) continue;
+          const by = gy + r, bx = currentX + c;
+          if (by >= 0 && by < BOARD_HEIGHT && bx >= 0 && bx < BOARD_WIDTH) {
+            const cell = cells[by * BOARD_WIDTH + bx];
+            if (!board[by][bx]) {
+              cell.classList.add('ghost');
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 4. Current piece
+  if (currentPiece) {
+    for (let r = 0; r < currentPiece.length; r++) {
+      for (let c = 0; c < currentPiece[r].length; c++) {
+        if (!currentPiece[r][c]) continue;
+        const by = currentY + r, bx = currentX + c;
+        if (by >= 0 && by < BOARD_HEIGHT && bx >= 0 && bx < BOARD_WIDTH) {
+          const cell = cells[by * BOARD_WIDTH + bx];
+          cell.className = 'cell filled';
+          cell.style.background = PIECE_COLORS[currentType];
+          cell.style.opacity = '';
+          cell.style.boxShadow = '';
+        }
+      }
+    }
+  }
+}
+
+function renderOverlayPlacements(cells) {
+  const all = lastAIEvaluation.allPlacements.filter(p => p.valid && !p.gameOver);
+  all.sort((a, b) => b.score - a.score);
+  const topN = all.slice(0, overlayTopN);
+
+  const rankStyles = [
+    { bg: 'rgba(0,255,0,0.15)', border: '2px solid rgba(0,255,0,0.8)' },
+    { bg: 'rgba(200,255,0,0.10)', border: '1px solid rgba(200,255,0,0.6)' },
+    { bg: 'rgba(255,255,0,0.08)', border: '1px solid rgba(255,255,0,0.45)' },
+    { bg: 'rgba(255,170,0,0.05)', border: '1px dashed rgba(255,170,0,0.35)' },
+    { bg: 'rgba(255,68,68,0.03)', border: '1px dashed rgba(255,68,68,0.25)' }
+  ];
+
+  // Render worst first, best last
+  for (let i = topN.length - 1; i >= 0; i--) {
+    const p = topN[i];
+    const shape = getPieceShape(p.hold ? lastAIEvaluation.holdPieceType : lastAIEvaluation.currentPieceType, p.rotation);
+    // Simulate hard drop
+    let dy = 0;
+    while (!collides(shape, p.x, dy + 1)) dy++;
+    const style = rankStyles[i] || rankStyles[rankStyles.length - 1];
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const by = dy + r, bx = p.x + c;
+        if (by >= 0 && by < BOARD_HEIGHT && bx >= 0 && bx < BOARD_WIDTH) {
+          if (!board[by][bx]) {
+            const cell = cells[by * BOARD_WIDTH + bx];
+            cell.classList.add('overlay-cell');
+            cell.style.background = style.bg;
+            cell.style.border = style.border;
+            cell.style.boxShadow = 'none';
+          }
+        }
+      }
+    }
+  }
+}
+
+function renderPreview(el, type) {
+  const cells = el.children;
+  for (let i = 0; i < 12; i++) {
+    cells[i].className = 'cell';
+    cells[i].style.background = '';
+  }
+  if (type < 0) return;
+  const shape = TETROMINOS[type];
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (shape[r][c]) {
+        const cell = cells[r * 4 + c];
+        cell.classList.add('filled');
+        cell.style.background = PIECE_COLORS[type];
+      }
+    }
+  }
+}
+
+// ===== STATS =====
+function fmtNum(n) { return n.toLocaleString(); }
+function fmtIProb(lvl) {
+  const p = lvl < 40 ? 1/7 : Math.max(0, 1/7 - (lvl - 39) * 0.0006);
+  if (p <= 0) return '0% (never)';
+  const oneIn = Math.round(1 / p);
+  return (p * 100).toFixed(2) + '% (1 in ' + oneIn + ')';
+}
+
+function updateStats() {
+  document.getElementById('stat-score').textContent = fmtNum(score);
+  document.getElementById('stat-level').textContent = fmtNum(level);
+  document.getElementById('stat-lines').textContent = fmtNum(lines);
+  document.getElementById('stat-speed').textContent = dropSpeed + 'ms';
+  document.getElementById('stat-ai-score').textContent = autoplayEnabled && lastAIEvaluation ? lastAIEvaluation.bestMove.score.toFixed(1) : 'N/A';
+  document.getElementById('stat-iprob').textContent = fmtIProb(level);
+}
+
+function displayHighScore() {
+  document.getElementById('hi-score').textContent = fmtNum(highScore.score);
+  document.getElementById('hi-lines').textContent = fmtNum(highScore.lines);
+  document.getElementById('hi-level').textContent = fmtNum(highScore.level);
+}
+
+function checkHighScore() {
+  let changed = false;
+  if (score > highScore.score) { highScore.score = score; changed = true; }
+  if (lines > highScore.lines) { highScore.lines = lines; changed = true; }
+  if (level > highScore.level) { highScore.level = level; changed = true; }
+  if (changed) {
+    displayHighScore();
+    saveHighScore();
+  }
+}
+
+// ===== GAME STATES =====
+function startGame() {
+  replayMode = false;
+  replayPieceQueue = [];
+  updateReplayRemaining();
+  replayQueueIndex = 0;
+  initBoard();
+  score = 0; level = 1; lines = 0; levelLines = 0;
+  dropSpeed = 1000;
+  holdType = -1;
+  canHold = true;
+  gameOver = false;
+  gamePaused = false;
+  gameActive = true;
+  lastAIEvaluation = null;
+  resetMetricScoreRanges();
+  clearLockDelay();
+  clearAutoplayTimers();
+
+  // Initialize seeded PRNG
+  seededRandom = gameSeed !== 0 ? mulberry32(gameSeed) : null;
+
+  nextType = randomPieceType();
+  const firstType = randomPieceType();
+  spawnPiece(firstType);
+  nextType = randomPieceType();
+
+  renderPreview(nextPreviewEl, nextType);
+  renderPreview(holdPreviewEl, -1);
+  updateStats();
+  renderVizPlaceholder();
+  drawBoard();
+
+  titleScreen.classList.add('hidden');
+  pauseScreen.classList.add('hidden');
+  gameoverScreen.classList.add('hidden');
+
+  startDropInterval();
+
+  if (autoplayEnabled) {
+    scheduleAutoplayMove();
+  }
+}
+
+function pauseGame() {
+  if (!gameActive || gameOver) return;
+  gamePaused = true;
+  stopDropInterval();
+  clearLockDelay();
+  clearAutoplayTimers();
+  pauseScreen.classList.remove('hidden');
+}
+
+function resumeGame() {
+  if (!gamePaused) return;
+  gamePaused = false;
+  pauseScreen.classList.add('hidden');
+  startDropInterval();
+  if (autoplayEnabled) {
+    scheduleAutoplayMove();
+  }
+}
+
+function triggerGameOver() {
+  gameOver = true;
+  gameActive = false;
+  replayMode = false;
+  updateReplayRemaining();
+  stopDropInterval();
+  clearLockDelay();
+  clearAutoplayTimers();
+  lastAIEvaluation = null;
+  renderVizPlaceholder();
+  checkHighScore();
+
+  document.getElementById('go-score').textContent = 'Score: ' + fmtNum(score);
+  document.getElementById('go-lines').textContent = 'Lines: ' + fmtNum(lines);
+  document.getElementById('go-level').textContent = 'Level: ' + fmtNum(level);
+  gameoverScreen.querySelector('h2').textContent = 'Game Over!';
+  gameoverScreen.classList.remove('hidden');
+  updateStats();
+  currentPiece = null;  // clear failed spawn piece so it's not drawn on the board
+  drawBoard();
+}
+
+function restartGame() {
+  stopDropInterval();
+  clearLockDelay();
+  clearAutoplayTimers();
+  lastAIEvaluation = null;
+  startGame();
+}
+
+function startReplayGame(logData) {
+  stopDropInterval();
+  clearLockDelay();
+  clearAutoplayTimers();
+  lastAIEvaluation = null;
+
+  // Set up replay state
+  const nameToIndex = {};
+  PIECE_NAMES.forEach((n, i) => nameToIndex[n] = i);
+
+  replayPieceQueue = logData.pieces.map(e => nameToIndex[typeof e === 'string' ? e : e.type]);
+  replayQueueIndex = 0;
+  replayMode = true;
+
+  // Initialize board from log's starting state
+  board = [];
+  if (logData.startingBoardState && logData.startingBoardState.length === BOARD_HEIGHT) {
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      board.push([...logData.startingBoardState[r]]);
+    }
+  } else {
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      board.push(new Array(BOARD_WIDTH).fill(0));
+    }
+  }
+
+  score = 0;
+  level = logData.startingLevel || 1;
+  lines = logData.startingLines || 0;
+  levelLines = logData.startingLevelLines || 0;
+  dropSpeed = Math.max(50, 1000 - (level - 1) * 25);
+  canHold = true;
+  gameOver = false;
+  gamePaused = false;
+  gameActive = true;
+  resetMetricScoreRanges();
+  seededRandom = null;
+
+  // Restore hold piece from log
+  if (logData.startingHoldPiece && nameToIndex[logData.startingHoldPiece] !== undefined) {
+    holdType = nameToIndex[logData.startingHoldPiece];
+  } else {
+    holdType = -1;
+  }
+
+  // Pull first two pieces from queue
+  const firstType = getNextPieceType();
+  spawnPiece(firstType);
+  nextType = getNextPieceType();
+
+  renderPreview(nextPreviewEl, nextType >= 0 ? nextType : -1);
+  renderPreview(holdPreviewEl, holdType);
+  updateStats();
+  renderVizPlaceholder();
+  drawBoard();
+
+  titleScreen.classList.add('hidden');
+  pauseScreen.classList.add('hidden');
+  gameoverScreen.classList.add('hidden');
+
+  startDropInterval();
+
+  if (autoplayEnabled) {
+    scheduleAutoplayMove();
+  }
+}
+
+function triggerReplayEnd() {
+  gameOver = true;
+  gameActive = false;
+  replayMode = false;
+  updateReplayRemaining();
+  stopDropInterval();
+  clearLockDelay();
+  clearAutoplayTimers();
+  lastAIEvaluation = null;
+  renderVizPlaceholder();
+  checkHighScore();
+
+  document.getElementById('go-score').textContent = 'Score: ' + fmtNum(score);
+  document.getElementById('go-lines').textContent = 'Lines: ' + fmtNum(lines);
+  document.getElementById('go-level').textContent = 'Level: ' + fmtNum(level);
+  gameoverScreen.querySelector('h2').textContent = 'Replay Complete!';
+  gameoverScreen.classList.remove('hidden');
+  updateStats();
+  drawBoard();
+}
+
+// ===== INPUT =====
+document.addEventListener('keydown', (e) => {
+  const tag = e.target.tagName;
+  if ((tag === 'INPUT' && e.target.type === 'text') || tag === 'TEXTAREA') {
+    if (e.key === 'Escape') e.target.blur();
+    return;
+  }
+  const key = e.key.toLowerCase();
+
+  // Close CEM modal on Escape (if not running)
+  if (key === 'escape' && isCemModalOpen()) {
+    if (!cemRunning) closeCemModal();
+    e.preventDefault();
+    return;
+  }
+  if (isCemModalOpen()) return;
+
+  // Sim modal: Escape stops if running, closes if stopped (deferred to avoid ESC dismissing confirm)
+  if (key === 'escape' && isSimModalOpen()) {
+    if (simRunning) {
+      simStopped = true;
+    } else {
+      setTimeout(() => closeSimModal(), 200);
+    }
+    e.preventDefault();
+    return;
+  }
+  if (isSimModalOpen()) return;
+
+  // Close custom scorer modal on Escape (deferred so ESC key fully releases before confirm dialog)
+  if (key === 'escape' && isScorerModalOpen()) {
+    setTimeout(() => closeCustomScorer(), 100);
+    e.preventDefault();
+    return;
+  }
+  if (isScorerModalOpen()) return;
+
+  // Close formula modal on Escape (highest priority)
+  if (key === 'escape' && isFormulaModalOpen()) {
+    closeFormulaModal();
+    e.preventDefault();
+    return;
+  }
+
+  // Block all game keys while formula modal is open
+  if (isFormulaModalOpen()) return;
+
+  // System keys — always active
+  if (key === 'a') {
+    toggleAutoplay();
+    return;
+  }
+  if (key === 'v') {
+    toggleViz();
+    return;
+  }
+  if (key === 'f' && !e.shiftKey) {
+    if (isFormulaModalOpen()) closeFormulaModal();
+    else document.getElementById('btn-custom-formulas').click();
+    return;
+  }
+  if (key === 'f' && e.shiftKey) {
+    if (isScorerModalOpen()) closeCustomScorer();
+    else openCustomScorer();
+    return;
+  }
+  if (key === 'h' && e.shiftKey) {
+    advancedToolsVisible = !advancedToolsVisible;
+    document.getElementById('btn-train-weights').style.display = advancedToolsVisible ? '' : 'none';
+    document.getElementById('topn-container').style.display = advancedToolsVisible ? '' : 'none';
+    document.getElementById('btn-replay').style.display = advancedToolsVisible ? '' : 'none';
+    document.getElementById('btn-replay-go').style.display = advancedToolsVisible ? '' : 'none';
+    document.getElementById('sim-export-log-wrap').style.display = advancedToolsVisible ? 'inline-block' : 'none';
+    return;
+  }
+  if (key === 'g' && gameActive && !gameOver) {
+    ghostEnabled = !ghostEnabled;
+    drawBoard();
+    return;
+  }
+  if ((key === 'escape' || key === 'p') && gameOver) {
+    gameoverScreen.classList.toggle('hidden');
+    return;
+  }
+  if ((key === 'p' || key === 'escape') && gameActive && !gameOver) {
+    if (gamePaused) resumeGame(); else pauseGame();
+    return;
+  }
+  if (key === 's') {
+    if (!gameActive || gameOver) {
+      restartGame();
+    } else {
+      if (confirm('Restart game?')) restartGame();
+    }
+    return;
+  }
+
+  // Game controls — blocked during autoplay, pause, game over, not active
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+
+  if (key === 'arrowleft') { e.preventDefault(); moveLeft(); }
+  else if (key === 'arrowright') { e.preventDefault(); moveRight(); }
+  else if (key === 'arrowdown') { e.preventDefault(); moveDown(); }
+  else if (key === 'arrowup' || key === 'x') { e.preventDefault(); rotate(); }
+  else if (key === ' ') { e.preventDefault(); hardDrop(); }
+  else if (key === 'c' || key === 'shift') { e.preventDefault(); holdPiece(); }
+});
+
+// Button handlers
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('btn-resume').addEventListener('click', resumeGame);
+document.getElementById('btn-restart').addEventListener('click', restartGame);
+gameoverScreen.addEventListener('click', (e) => {
+  if (e.target === gameoverScreen) gameoverScreen.classList.add('hidden');
+});
+boardEl.addEventListener('click', () => {
+  if (gameOver && gameoverScreen.classList.contains('hidden')) {
+    gameoverScreen.classList.remove('hidden');
+  }
+});
+
+// Replay Piece Log handlers
+const replayFileInput = document.getElementById('replay-file-input');
+function triggerReplayFileInput() {
+  replayFileInput.value = '';
+  replayFileInput.click();
+}
+document.getElementById('btn-replay').addEventListener('click', triggerReplayFileInput);
+document.getElementById('btn-replay-go').addEventListener('click', triggerReplayFileInput);
+replayFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const logData = JSON.parse(ev.target.result);
+      if (!logData.pieces || !Array.isArray(logData.pieces) || logData.pieces.length === 0) {
+        alert('Invalid piece log file: no pieces array found.');
+        return;
+      }
+      startReplayGame(logData);
+    } catch (err) {
+      alert('Failed to parse piece log file: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('btn-reset-high').addEventListener('click', () => {
+  if (confirm('Reset high score?')) {
+    highScore = { score: 0, lines: 0, level: 1 };
+    saveHighScore();
+    displayHighScore();
+  }
+});
+
+// Touch button handlers
+document.getElementById('touch-ai').addEventListener('click', () => {
+  toggleAutoplay();
+  updateTouchAIButton();
+});
+document.getElementById('touch-pause').addEventListener('click', () => {
+  if (!gameActive || gameOver) return;
+  if (gamePaused) resumeGame(); else pauseGame();
+});
+document.getElementById('touch-restart').addEventListener('click', () => {
+  if (!gameActive || gameOver) {
+    restartGame();
+  } else {
+    if (confirm('Restart game?')) restartGame();
+  }
+});
+document.getElementById('touch-up').addEventListener('click', () => {
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+  rotate();
+});
+document.getElementById('touch-down').addEventListener('click', () => {
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+  moveDown();
+});
+document.getElementById('touch-left').addEventListener('click', () => {
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+  moveLeft();
+});
+document.getElementById('touch-right').addEventListener('click', () => {
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+  moveRight();
+});
+document.getElementById('touch-space').addEventListener('click', () => {
+  if (!gameActive || gamePaused || gameOver || autoplayEnabled) return;
+  hardDrop();
+});
+
+function updateTouchAIButton() {
+  const btn = document.getElementById('touch-ai');
+  btn.classList.toggle('active-toggle', autoplayEnabled);
+}
+
+// Seed input events
+document.getElementById('seed-input').addEventListener('input', (e) => {
+  const val = parseInt(e.target.value, 10);
+  gameSeed = (!isNaN(val) && val >= 0) ? val : 0;
+  saveSeed();
+});
+document.getElementById('seed-randomize').addEventListener('click', () => {
+  gameSeed = Math.floor(Math.random() * 4294967295) + 1;
+  document.getElementById('seed-input').value = gameSeed;
+  saveSeed();
+});
+
+// Team name persistence
+let teamName = '';
+document.getElementById('team-name').addEventListener('input', (e) => {
+  teamName = e.target.value.trim();
+  try { localStorage.setItem('tetrisTeamName', teamName); } catch (e) {}
+});
+function loadTeamName() {
+  try {
+    const saved = localStorage.getItem('tetrisTeamName');
+    if (saved) { teamName = saved; document.getElementById('team-name').value = saved; }
+  } catch (e) {}
+}
+
+// ===== AI AUTOPLAY =====
+function toggleAutoplay() {
+  autoplayEnabled = !autoplayEnabled;
+  const badge = document.getElementById('ai-badge');
+  badge.textContent = autoplayEnabled ? 'AI ON' : 'AI OFF';
+  badge.className = 'badge ' + (autoplayEnabled ? 'ai-on' : 'ai-off');
+  updateTouchAIButton();
+
+  if (autoplayEnabled) {
+    if (gameActive && !gamePaused && !gameOver) {
+      scheduleAutoplayMove();
+    }
+  } else {
+    clearAutoplayTimers();
+    lastAIEvaluation = null;
+    renderVizPlaceholder();
+    updateStats();
+  }
+}
+
+function toggleViz() {
+  vizEnabled = !vizEnabled;
+  const badge = document.getElementById('viz-badge');
+  badge.textContent = vizEnabled ? 'Viz ON' : 'Viz OFF';
+  badge.className = 'badge ' + (vizEnabled ? 'viz-on' : 'viz-off');
+
+  if (vizEnabled && lastAIEvaluation) {
+    renderVisualization();
+  } else if (!vizEnabled) {
+    renderVizPlaceholder();
+  }
+  drawBoard();
+}
+
+function clearAutoplayTimers() {
+  autoplayTimers.forEach(t => clearTimeout(t));
+  autoplayTimers = [];
+}
+
+function scheduleAutoplayMove() {
+  if (!autoplayEnabled || !gameActive || gamePaused || gameOver) return;
+  clearAutoplayTimers();
+
+  // Reset piece to base state for consistent evaluation
+  currentRotation = 0;
+  currentPiece = getPieceShape(currentType, 0);
+  currentX = Math.floor((BOARD_WIDTH - currentPiece[0].length) / 2);
+
+  // Calculate best move for current piece
+  const currentEval = calculateBestMove(currentType, board);
+  let bestMove = currentEval.bestMove;
+  let allPlacements = currentEval.allPlacements;
+  let useHold = false;
+  let holdPieceType = holdType >= 0 ? holdType : nextType;
+
+  // Consider hold (skip if hold piece would be invalid, e.g. replay log exhausted,
+  // or if holding with empty hold slot would need to consume from an exhausted queue)
+  // Also check that the hold piece can actually spawn at top-center before considering hold,
+  // since holdPiece() spawns at center and triggers game over if it collides there.
+  if (canHold && holdPieceType >= 0 && !(replayMode && holdType === -1 && nextType === -1)) {
+    const holdSpawnShape = getPieceShape(holdPieceType, 0);
+    const holdSpawnX = Math.floor((BOARD_WIDTH - holdSpawnShape[0].length) / 2);
+    if (!collides(holdSpawnShape, holdSpawnX, 0, board)) {
+      const holdEval = calculateBestMove(holdPieceType, board);
+      holdEval.allPlacements.forEach(p => p.hold = true);
+      if (holdEval.bestMove && (!bestMove || holdEval.bestMove.score > bestMove.score)) {
+        bestMove = { ...holdEval.bestMove, hold: true };
+        useHold = true;
+      }
+      allPlacements = allPlacements.concat(holdEval.allPlacements);
+    }
+  }
+
+  lastAIEvaluation = {
+    bestMove,
+    allPlacements,
+    currentPieceType: currentType,
+    holdPieceType: holdPieceType
+  };
+
+  updateStats();
+  if (vizEnabled) renderVisualization();
+  drawBoard();
+
+  if (bestMove) {
+    executeAutoplayMove(bestMove, useHold);
+  }
+}
+
+// Reusable scratch board to avoid allocating a new board clone per test placement
+const _scratchBoard = [];
+for (let r = 0; r < BOARD_HEIGHT; r++) _scratchBoard.push(new Array(BOARD_WIDTH));
+const _emptyRow = new Array(BOARD_WIDTH).fill(0);
+
+function calculateBestMove(pieceType, boardState) {
+  let bestMove = null;
+  const allPlacements = [];
+
+  for (let rot = 0; rot < 4; rot++) {
+    const shape = getPieceShape(pieceType, rot);
+    for (let x = -1; x <= BOARD_WIDTH; x++) {
+      // Bounds check
+      let valid = true;
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const bx = x + c;
+          if (bx < 0 || bx >= BOARD_WIDTH) { valid = false; break; }
+        }
+        if (!valid) break;
+      }
+
+      if (!valid) {
+        allPlacements.push({ rotation: rot, x, valid: false, hold: false, score: 0, breakdown: null });
+        continue;
+      }
+
+      // Check collision at spawn
+      if (collides(shape, x, 0, boardState)) {
+        allPlacements.push({ rotation: rot, x, valid: false, hold: false, score: 0, breakdown: null });
+        continue;
+      }
+
+      // Hard drop simulation
+      let dy = 0;
+      while (!collides(shape, x, dy + 1, boardState)) dy++;
+
+      // Place piece on scratch board (copy from source, then apply piece)
+      for (let r = 0; r < BOARD_HEIGHT; r++) {
+        const src = boardState[r], dst = _scratchBoard[r];
+        for (let c = 0; c < BOARD_WIDTH; c++) dst[c] = src[c];
+      }
+      let isGameOver = false;
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const by = dy + r, bx = x + c;
+          if (by < 0) { isGameOver = true; break; }
+          _scratchBoard[by][bx] = pieceType + 1;
+        }
+        if (isGameOver) break;
+      }
+
+      if (isGameOver) {
+        allPlacements.push({ rotation: rot, x, valid: true, hold: false, score: -100000, breakdown: null, gameOver: true });
+        continue;
+      }
+
+      // Clear lines on scratch board (in-place, restore after evaluation)
+      let clearedLines = 0;
+      for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+        let full = true;
+        for (let c = 0; c < BOARD_WIDTH; c++) { if (!_scratchBoard[y][c]) { full = false; break; } }
+        if (full) {
+          // Shift rows down: move rows above down by one
+          const clearedRow = _scratchBoard[y];
+          for (let yr = y; yr > 0; yr--) _scratchBoard[yr] = _scratchBoard[yr - 1];
+          // Reuse the cleared row as the new empty top row
+          for (let c = 0; c < BOARD_WIDTH; c++) clearedRow[c] = 0;
+          _scratchBoard[0] = clearedRow;
+          y++;
+          clearedLines++;
+        }
+      }
+
+      const eval_ = evaluateBoardDetailed(_scratchBoard, clearedLines);
+      const placement = {
+        rotation: rot, x, valid: true, hold: false,
+        score: eval_.score, breakdown: eval_.breakdown, gameOver: false
+      };
+      allPlacements.push(placement);
+
+      if (!bestMove || eval_.score > bestMove.score) {
+        bestMove = { rotation: rot, x, hold: false, score: eval_.score };
+      }
+    }
+  }
+  return { bestMove, allPlacements };
+}
+
+// ===== SAFE FORMULA PARSER =====
+const ALLOWED_SUB_VARS = new Set([
+  'lines', 'holes', 'bump', 'height', 'valley',
+  'wLines', 'wHoles', 'wBump', 'wHeight', 'wValley', 'goPenalty'
+]);
+const ALLOWED_TOTAL_VARS = new Set([
+  ...ALLOWED_SUB_VARS,
+  'linesScore', 'holesScore', 'bumpScore', 'heightScore', 'valleyScore'
+]);
+
+function tokenizeFormula(expr) {
+  if (expr.length > 200) throw new Error('Expression too long (max 200 chars)');
+  const tokens = [];
+  let i = 0;
+  while (i < expr.length) {
+    if (/\s/.test(expr[i])) { i++; continue; }
+    if (/[0-9]/.test(expr[i]) || (expr[i] === '.' && i + 1 < expr.length && /[0-9]/.test(expr[i + 1]))) {
+      let num = '';
+      while (i < expr.length && /[0-9.]/.test(expr[i])) { num += expr[i++]; }
+      if (isNaN(Number(num))) throw new Error('Invalid number: ' + num);
+      tokens.push({ type: 'NUMBER', value: Number(num) });
+      continue;
+    }
+    if (/[a-zA-Z_]/.test(expr[i])) {
+      let id = '';
+      while (i < expr.length && /[a-zA-Z0-9_]/.test(expr[i])) { id += expr[i++]; }
+      tokens.push({ type: 'IDENTIFIER', value: id });
+      continue;
+    }
+    if ('+-*/^'.includes(expr[i])) {
+      tokens.push({ type: 'OPERATOR', value: expr[i++] });
+      continue;
+    }
+    if (expr[i] === '(') { tokens.push({ type: 'LPAREN' }); i++; continue; }
+    if (expr[i] === ')') { tokens.push({ type: 'RPAREN' }); i++; continue; }
+    throw new Error('Unexpected character: ' + expr[i]);
+  }
+  return tokens;
+}
+
+function validateTokens(tokens, allowedSet) {
+  for (const tok of tokens) {
+    if (tok.type === 'IDENTIFIER' && !allowedSet.has(tok.value)) {
+      throw new Error('Unknown variable: ' + tok.value);
+    }
+  }
+}
+
+function evaluateFormula(tokens, variables) {
+  let pos = 0;
+  function peek() { return pos < tokens.length ? tokens[pos] : null; }
+  function consume() { return tokens[pos++]; }
+
+  function parseExpr() {
+    let left = parseTerm();
+    while (peek() && peek().type === 'OPERATOR' && (peek().value === '+' || peek().value === '-')) {
+      const op = consume().value;
+      const right = parseTerm();
+      left = op === '+' ? left + right : left - right;
+    }
+    return left;
+  }
+
+  function parseTerm() {
+    let left = parsePower();
+    while (peek() && peek().type === 'OPERATOR' && (peek().value === '*' || peek().value === '/')) {
+      const op = consume().value;
+      const right = parsePower();
+      if (op === '*') { left = left * right; }
+      else { left = right !== 0 ? Math.round(left / right * 1e8) / 1e8 : 0; }
+    }
+    return left;
+  }
+
+  function parsePower() {
+    let base = parseUnary();
+    if (peek() && peek().type === 'OPERATOR' && peek().value === '^') {
+      consume();
+      const exp = parsePower();
+      // Round to 8 decimal places for cross-platform determinism
+      return Math.round(Math.pow(base, exp) * 1e8) / 1e8;
+    }
+    return base;
+  }
+
+  function parseUnary() {
+    if (peek() && peek().type === 'OPERATOR' && peek().value === '-') {
+      consume();
+      return -parseUnary();
+    }
+    return parsePrimary();
+  }
+
+  function parsePrimary() {
+    const tok = peek();
+    if (!tok) throw new Error('Unexpected end of expression');
+    if (tok.type === 'NUMBER') { consume(); return tok.value; }
+    if (tok.type === 'IDENTIFIER') {
+      consume();
+      if (!(tok.value in variables)) throw new Error('Undefined variable: ' + tok.value);
+      return variables[tok.value];
+    }
+    if (tok.type === 'LPAREN') {
+      consume();
+      const val = parseExpr();
+      if (!peek() || peek().type !== 'RPAREN') throw new Error('Missing closing parenthesis');
+      consume();
+      return val;
+    }
+    throw new Error('Unexpected token');
+  }
+
+  const result = parseExpr();
+  if (pos < tokens.length) throw new Error('Unexpected token after expression');
+  if (!isFinite(result)) return 0;
+  return result;
+}
+
+function evalCustomOrDefault(compiledTokens, variables, defaultFn) {
+  if (!compiledTokens) return defaultFn();
+  try {
+    const result = evaluateFormula(compiledTokens, variables);
+    if (!isFinite(result)) return defaultFn();
+    return result;
+  } catch (e) {
+    return defaultFn();
+  }
+}
+
+function compileFormulas() {
+  const keys = ['lines', 'holes', 'bump', 'height', 'valley', 'total'];
+  keys.forEach(key => {
+    const expr = customFormulas[key].trim();
+    if (expr === '') { compiledFormulas[key] = null; return; }
+    const allowedSet = key === 'total' ? ALLOWED_TOTAL_VARS : ALLOWED_SUB_VARS;
+    try {
+      const tokens = tokenizeFormula(expr);
+      validateTokens(tokens, allowedSet);
+      const dummyVars = {};
+      allowedSet.forEach(v => dummyVars[v] = 1);
+      evaluateFormula([...tokens], dummyVars);
+      compiledFormulas[key] = tokens;
+    } catch (e) {
+      console.warn('Formula "' + key + '" invalid, using default:', e.message);
+      compiledFormulas[key] = null;
+    }
+  });
+}
+
+function evaluateBoardDetailed(boardState, linesCleared) {
+  const colHeights = new Array(BOARD_WIDTH).fill(0);
+  for (let c = 0; c < BOARD_WIDTH; c++) {
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      if (boardState[r][c]) {
+        colHeights[c] = BOARD_HEIGHT - r;
+        break;
+      }
+    }
+  }
+
+  const aggregateHeight = colHeights.reduce((a, b) => a + b, 0);
+
+  let holes = 0;
+  for (let c = 0; c < BOARD_WIDTH; c++) {
+    let foundBlock = false;
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      if (boardState[r][c]) foundBlock = true;
+      else if (foundBlock) holes++;
+    }
+  }
+
+  let bumpiness = 0;
+  for (let c = 0; c < BOARD_WIDTH - 1; c++) {
+    bumpiness += Math.abs(colHeights[c] - colHeights[c + 1]);
+  }
+
+  let valleyDepth = 0;
+  for (let c = 0; c < BOARD_WIDTH; c++) {
+    const left = c > 0 ? colHeights[c - 1] : Infinity;
+    const right = c < BOARD_WIDTH - 1 ? colHeights[c + 1] : Infinity;
+    if (colHeights[c] < left && colHeights[c] < right) {
+      const tallerNeighbor = Math.max(left === Infinity ? 0 : left, right === Infinity ? 0 : right);
+      valleyDepth += tallerNeighbor - colHeights[c];
+    }
+  }
+
+  // Game over penalty
+  let gameOverPenalty = 0;
+  if (boardState[0].some(c => c !== 0)) gameOverPenalty = -100000;
+
+  const subVars = {
+    lines: linesCleared, holes, bump: bumpiness, height: aggregateHeight, valley: valleyDepth,
+    wLines: weights.lines, wHoles: weights.holes, wBump: weights.bumpiness,
+    wHeight: weights.height, wValley: weights.valley, goPenalty: gameOverPenalty
+  };
+
+  // Round each sub-score to 8dp for cross-platform determinism
+  const R8 = v => Math.round(v * 1e8) / 1e8;
+  const linesScore = R8(evalCustomOrDefault(compiledFormulas.lines, subVars,
+    () => linesCleared * weights.lines * 100));
+  const holesScore = R8(evalCustomOrDefault(compiledFormulas.holes, subVars,
+    () => holes * weights.holes * 5));
+  const bumpScore = R8(evalCustomOrDefault(compiledFormulas.bump, subVars,
+    () => bumpiness * weights.bumpiness));
+  const heightScore = R8(evalCustomOrDefault(compiledFormulas.height, subVars,
+    () => aggregateHeight * weights.height));
+  const valleyScore = R8(evalCustomOrDefault(compiledFormulas.valley, subVars,
+    () => valleyDepth * weights.valley));
+
+  const totalVars = { ...subVars, linesScore, holesScore, bumpScore, heightScore, valleyScore };
+  let totalScore = R8(evalCustomOrDefault(compiledFormulas.total, totalVars,
+    () => linesScore + holesScore + bumpScore + heightScore + valleyScore + gameOverPenalty));
+
+  // Apply custom scorer if defined
+  let customScore = 0;
+  if (customScorerFn) {
+    try { customScore = R8(Number(customScorerFn(boardState, linesCleared)) || 0); }
+    catch (e) { customScore = 0; }
+  }
+  totalScore = R8(totalScore + customScore);
+
+  // Track min/max score ranges per metric
+  const scoreMap = { lines: linesScore, holes: holesScore, bumpiness: bumpScore, height: heightScore, valley: valleyScore, custom: customScore, total: totalScore };
+  for (const k in scoreMap) {
+    if (!metricScoreRanges[k]) metricScoreRanges[k] = { min: Infinity, max: -Infinity };
+    const v = scoreMap[k];
+    if (v < metricScoreRanges[k].min) metricScoreRanges[k].min = v;
+    if (v > metricScoreRanges[k].max) metricScoreRanges[k].max = v;
+  }
+
+  return {
+    score: totalScore,
+    breakdown: {
+      lines: linesScore,
+      holes: holesScore,
+      bumpiness: bumpScore,
+      height: heightScore,
+      valley: valleyScore,
+      custom: customScore
+    }
+  };
+}
+
+function executeAutoplayMove(move, useHold) {
+  let delay = 0;
+
+  const addAction = (fn) => {
+    const timer = setTimeout(() => {
+      if (!gameActive || gamePaused || gameOver || !autoplayEnabled) return;
+      fn();
+    }, delay);
+    autoplayTimers.push(timer);
+    delay += autoplayDelay;
+  };
+
+  // Hold if needed
+  if (useHold) {
+    addAction(() => holdPiece());
+  }
+
+  // Rotations
+  for (let i = 0; i < move.rotation; i++) {
+    addAction(() => rotate());
+  }
+
+  // Movement
+  const targetX = move.x;
+  const scheduleMovement = () => {
+    const startDelay = delay;
+    // We need to figure out how many moves, but piece X may change after rotations
+    // Use recursive approach through actions
+    const moveToTarget = () => {
+      if (!gameActive || gamePaused || gameOver || !autoplayEnabled) return;
+      if (currentX < targetX) {
+        moveRight();
+        const t = setTimeout(moveToTarget, autoplayDelay);
+        autoplayTimers.push(t);
+      } else if (currentX > targetX) {
+        moveLeft();
+        const t = setTimeout(moveToTarget, autoplayDelay);
+        autoplayTimers.push(t);
+      } else {
+        // At target, hard drop
+        const t = setTimeout(() => {
+          if (!gameActive || gamePaused || gameOver || !autoplayEnabled) return;
+          hardDrop();
+        }, autoplayDelay);
+        autoplayTimers.push(t);
+      }
+    };
+    addAction(moveToTarget);
+  };
+
+  scheduleMovement();
+}
+
+// ===== AI VISUALIZATION =====
+function renderVisualization() {
+  if (!lastAIEvaluation) { renderVizPlaceholder(); return; }
+
+  const eval_ = lastAIEvaluation;
+  renderHeatmap('heatmap-current', eval_.allPlacements.filter(p => !p.hold), eval_.bestMove, eval_.currentPieceType);
+  const holdLabel = document.getElementById('heatmap-hold-label');
+  const holdPlacements = eval_.allPlacements.filter(p => p.hold);
+  if (holdPlacements.length > 0) {
+    holdLabel.textContent = 'Hold Piece';
+    renderHeatmap('heatmap-hold', holdPlacements, eval_.bestMove, eval_.holdPieceType);
+  } else {
+    holdLabel.textContent = 'Hold (N/A)';
+    renderHeatmapPlaceholder('heatmap-hold');
+  }
+
+  // Render breakdown for best move
+  if (eval_.bestMove) {
+    const best = eval_.allPlacements.find(p =>
+      p.rotation === eval_.bestMove.rotation &&
+      p.x === eval_.bestMove.x &&
+      p.hold === (eval_.bestMove.hold || false) &&
+      p.valid
+    );
+    if (best && best.breakdown) {
+      renderBreakdown(best);
+    } else {
+      renderBreakdownPlaceholder();
+    }
+  } else {
+    renderBreakdownPlaceholder();
+  }
+}
+
+function renderHeatmap(containerId, placements, bestMove, pieceType) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+
+  // Find valid score range
+  const validScores = placements.filter(p => p.valid && !p.gameOver).map(p => p.score);
+  const minScore = validScores.length ? Math.min(...validScores) : 0;
+  const maxScore = validScores.length ? Math.max(...validScores) : 0;
+
+  // Group by rotation
+  const rotations = [0, 1, 2, 3];
+  for (const rot of rotations) {
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    const label = document.createElement('span');
+    label.className = 'heatmap-row-label';
+    label.textContent = 'R' + rot;
+    row.appendChild(label);
+
+    const rotPlacements = placements.filter(p => p.rotation === rot);
+    for (const p of rotPlacements) {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+
+      if (p.x === -1 || p.x === BOARD_WIDTH) {
+        cell.classList.add('wall-cell');
+      } else if (!p.valid) {
+        cell.classList.add('invalid-cell');
+      } else if (p.gameOver) {
+        cell.classList.add('game-over-cell');
+      } else {
+        // Color by score
+        let hue;
+        if (maxScore === minScore) {
+          hue = 60; // yellow
+        } else {
+          hue = ((p.score - minScore) / (maxScore - minScore)) * 120;
+        }
+        cell.style.background = `hsl(${hue}, 100%, 40%)`;
+      }
+
+      // Best move highlight
+      if (bestMove && p.rotation === bestMove.rotation && p.x === bestMove.x &&
+          (p.hold || false) === (bestMove.hold || false) && p.valid) {
+        cell.classList.add('best');
+      }
+
+      // Tooltip
+      cell.addEventListener('mouseenter', (e) => {
+        if (!p.valid && !p.gameOver) return;
+        let text = `R${p.rotation} X${p.x}`;
+        if (p.hold) text += ' (Hold)';
+        text += `\nScore: ${p.score ? p.score.toFixed(1) : 0}`;
+        if (p.breakdown) {
+          text += `\nLines: ${p.breakdown.lines.toFixed(1)}`;
+          text += `\nHoles: ${p.breakdown.holes.toFixed(1)}`;
+          text += `\nBump: ${p.breakdown.bumpiness.toFixed(1)}`;
+          text += `\nHeight: ${p.breakdown.height.toFixed(2)}`;
+          text += `\nValley: ${p.breakdown.valley.toFixed(1)}`;
+          if (customScorerFn) {
+            text += `\nCustom: ${(p.breakdown.custom || 0).toFixed(1)}`;
+          }
+        }
+        if (p.gameOver) text += '\nGAME OVER';
+        tooltipEl.textContent = text;
+        tooltipEl.style.display = 'block';
+        tooltipEl.style.left = (e.pageX + 10) + 'px';
+        tooltipEl.style.top = (e.pageY + 10) + 'px';
+      });
+      cell.addEventListener('mousemove', (e) => {
+        tooltipEl.style.left = (e.pageX + 10) + 'px';
+        tooltipEl.style.top = (e.pageY + 10) + 'px';
+      });
+      cell.addEventListener('mouseleave', () => {
+        tooltipEl.style.display = 'none';
+      });
+
+      // Click to show breakdown
+      cell.addEventListener('click', () => {
+        if (p.valid && p.breakdown) {
+          renderBreakdown(p);
+        }
+      });
+
+      row.appendChild(cell);
+    }
+    container.appendChild(row);
+  }
+}
+
+function renderHeatmapPlaceholder(containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = '';
+  for (let rot = 0; rot < 4; rot++) {
+    const row = document.createElement('div');
+    row.className = 'heatmap-row';
+    const label = document.createElement('span');
+    label.className = 'heatmap-row-label';
+    label.textContent = 'R' + rot;
+    row.appendChild(label);
+    for (let c = 0; c < 12; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      if (c === 0 || c === 11) {
+        cell.classList.add('wall-cell');
+      }
+      row.appendChild(cell);
+    }
+    container.appendChild(row);
+  }
+}
+
+function renderVizPlaceholder() {
+  renderHeatmapPlaceholder('heatmap-current');
+  renderHeatmapPlaceholder('heatmap-hold');
+  renderBreakdownPlaceholder();
+}
+
+function renderBreakdown(placement) {
+  const header = document.getElementById('breakdown-header');
+  header.textContent = `R${placement.rotation} X${placement.x} = ${placement.score.toFixed(1)}`;
+  if (placement.hold) header.textContent += ' (Hold)';
+
+  const container = document.getElementById('breakdown-rows');
+  container.innerHTML = '';
+
+  const bd = placement.breakdown;
+  const factors = [
+    { label: 'Lines', value: bd.lines },
+    { label: 'Holes', value: bd.holes },
+    { label: 'Bump', value: bd.bumpiness },
+    { label: 'Height', value: bd.height },
+    { label: 'Valley', value: bd.valley }
+  ];
+  if (customScorerFn) {
+    factors.push({ label: 'Custom', value: bd.custom || 0, color: '#CC00FF' });
+  }
+
+  const maxAbs = Math.max(...factors.map(f => Math.abs(f.value)), 0.01);
+
+  factors.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'breakdown-row';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'breakdown-label';
+    lbl.textContent = f.label;
+
+    const barContainer = document.createElement('div');
+    barContainer.className = 'breakdown-bar-container';
+
+    const centerLine = document.createElement('div');
+    centerLine.className = 'breakdown-center-line';
+    barContainer.appendChild(centerLine);
+
+    const bar = document.createElement('div');
+    bar.className = 'breakdown-bar ' + (f.value >= 0 ? 'positive' : 'negative');
+    const width = Math.max(2, Math.abs(f.value) / maxAbs * 50);
+    bar.style.width = width + '%';
+    if (f.color) { bar.style.background = f.color; lbl.style.color = f.color; }
+    barContainer.appendChild(bar);
+
+    const val = document.createElement('span');
+    val.className = 'breakdown-value';
+    val.textContent = f.value.toFixed(2);
+
+    row.appendChild(lbl);
+    row.appendChild(barContainer);
+    row.appendChild(val);
+    container.appendChild(row);
+  });
+}
+
+function renderBreakdownPlaceholder() {
+  document.getElementById('breakdown-header').textContent = 'Best Move';
+  const container = document.getElementById('breakdown-rows');
+  container.innerHTML = '';
+  const labels = ['Lines', 'Holes', 'Bump', 'Height', 'Valley'];
+  if (customScorerFn) labels.push('Custom');
+  labels.forEach(l => {
+    const row = document.createElement('div');
+    row.className = 'breakdown-row';
+    const lbl = document.createElement('span');
+    lbl.className = 'breakdown-label';
+    lbl.textContent = l;
+    const barC = document.createElement('div');
+    barC.className = 'breakdown-bar-container';
+    const cl = document.createElement('div');
+    cl.className = 'breakdown-center-line';
+    barC.appendChild(cl);
+    const val = document.createElement('span');
+    val.className = 'breakdown-value';
+    val.textContent = '--';
+    val.style.color = '#666';
+    row.appendChild(lbl);
+    row.appendChild(barC);
+    row.appendChild(val);
+    container.appendChild(row);
+  });
+}
+
+// ===== AI TUNING =====
+function formatWeight(id, value) {
+  return id === 'height' ? parseFloat(value).toFixed(2) : parseFloat(value).toFixed(1);
+}
+
+function styleSlider(slider) {
+  const min = parseFloat(slider.min);
+  const max = parseFloat(slider.max);
+  const val = parseFloat(slider.value);
+  const pct = ((val - min) / (max - min)) * 100;
+  slider.style.background = 'linear-gradient(to right, #00FFFF 0%, #00FFFF ' + pct + '%, #333 ' + pct + '%, #333 100%)';
+}
+
+const sliderIds = ['lines', 'holes', 'bumpiness', 'height', 'valley'];
+sliderIds.forEach(id => {
+  const slider = document.getElementById('weight-' + id);
+  const valEl = document.getElementById('val-' + id);
+  styleSlider(slider);
+  slider.addEventListener('input', () => {
+    weights[id] = parseFloat(slider.value);
+    valEl.textContent = formatWeight(id, slider.value);
+    styleSlider(slider);
+    saveWeights();
+  });
+});
+
+let topNSlider = document.getElementById('weight-overlayTopN');
+const topNVal = document.getElementById('val-overlayTopN');
+styleSlider(topNSlider);
+topNSlider.addEventListener('input', () => {
+  overlayTopN = parseInt(topNSlider.value);
+  topNVal.textContent = topNSlider.value;
+  styleSlider(topNSlider);
+  drawBoard();
+});
+
+// Custom delay dropdown
+const delayTrigger = document.getElementById('delay-dropdown-trigger');
+const delayMenu = document.getElementById('delay-dropdown-menu');
+
+function syncDelayDropdown() {
+  delayMenu.querySelectorAll('.delay-dropdown-item').forEach(i => {
+    i.classList.toggle('selected', parseInt(i.dataset.value) === autoplayDelay);
+    if (parseInt(i.dataset.value) === autoplayDelay) delayTrigger.textContent = i.textContent;
+  });
+}
+
+delayTrigger.addEventListener('click', () => {
+  delayMenu.classList.toggle('hidden');
+});
+
+delayMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.delay-dropdown-item');
+  if (!item) return;
+  autoplayDelay = parseInt(item.dataset.value);
+  delayTrigger.textContent = item.textContent;
+  delayMenu.querySelectorAll('.delay-dropdown-item').forEach(i => i.classList.remove('selected'));
+  item.classList.add('selected');
+  delayMenu.classList.add('hidden');
+  saveAutoplayDelay();
+});
+
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('delay-dropdown').contains(e.target)) {
+    delayMenu.classList.add('hidden');
+  }
+});
+
+document.getElementById('btn-reset-weights').addEventListener('click', () => {
+  weights = { ...DEFAULT_WEIGHTS };
+  overlayTopN = DEFAULT_TOP_N;
+  syncSliders();
+  saveWeights();
+});
+
+// Export AI settings
+function downloadFile(content, filename, ext) {
+  const type = ext === 'json' ? 'application/json' : 'text/plain';
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename.replace(/\.\w+$/, '.' + ext);
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+const exportAiMenu = document.getElementById('export-ai-menu');
+document.getElementById('btn-export-ai').addEventListener('click', () => {
+  exportAiMenu.classList.toggle('hidden');
+});
+exportAiMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.export-menu-item');
+  if (!item) return;
+  const ext = item.dataset.ext;
+  const data = {
+    version: 1,
+    teamName: teamName || null,
+    timestamp: new Date().toISOString(),
+    seed: gameSeed,
+    autoplayDelay,
+    weights: { ...weights },
+    formulas: { ...customFormulas },
+    ...(customScorerCode ? { customScorer: customScorerCode } : {})
+  };
+  const settingsPrefix = teamName ? teamName.replace(/[^a-zA-Z0-9_-]/g, '_') + '-' : '';
+  downloadFile(JSON.stringify(data, null, 2), settingsPrefix + 'tetris-ai-settings.' + ext, ext);
+  exportAiMenu.classList.add('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('btn-export-ai').contains(e.target) && !exportAiMenu.contains(e.target)) {
+    exportAiMenu.classList.add('hidden');
+  }
+});
+
+// Import AI settings
+const importFileInput = document.getElementById('import-file-input');
+document.getElementById('btn-import-ai').addEventListener('click', () => {
+  importFileInput.click();
+});
+importFileInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt) => {
+    try {
+      const data = JSON.parse(evt.target.result);
+      // Validate
+      if (!data || typeof data !== 'object') throw new Error('Invalid format');
+      if (!VALID_DELAYS.includes(data.autoplayDelay)) throw new Error('Invalid autoplayDelay');
+      if (!data.weights || typeof data.weights !== 'object') throw new Error('Missing weights');
+      const wKeys = ['lines', 'holes', 'bumpiness', 'height', 'valley'];
+      for (const k of wKeys) {
+        if (typeof data.weights[k] !== 'number') throw new Error('Invalid weight: ' + k);
+      }
+      const importedFormulas = data.formulas || data.customFormulas;
+      if (!importedFormulas || typeof importedFormulas !== 'object') throw new Error('Missing formulas');
+      const fKeys = ['lines', 'holes', 'bump', 'height', 'valley', 'total'];
+      for (const k of fKeys) {
+        if (importedFormulas[k] !== undefined && typeof importedFormulas[k] !== 'string') throw new Error('Invalid formula: ' + k);
+      }
+      // Apply autoplay delay
+      autoplayDelay = data.autoplayDelay;
+      syncDelayDropdown();
+      saveAutoplayDelay();
+      // Apply weights
+      wKeys.forEach(k => { weights[k] = data.weights[k]; });
+      syncSliders();
+      saveWeights();
+      // Apply formulas
+      fKeys.forEach(k => { customFormulas[k] = importedFormulas[k] || ''; });
+      compileFormulas();
+      saveCustomFormulas();
+      // Apply custom scorer
+      if (data.customScorer && typeof data.customScorer === 'string') {
+        try {
+          const fn = new Function('board', 'linesCleared', data.customScorer);
+          const dummyBoard = Array.from({ length: 20 }, () => new Array(10).fill(0));
+          const r = fn(dummyBoard, 0);
+          if (typeof r === 'number' && !isNaN(r)) {
+            customScorerFn = fn;
+            customScorerCode = data.customScorer;
+            localStorage.setItem('tetrisCustomScorer', data.customScorer);
+          }
+        } catch (e) { /* ignore invalid scorer */ }
+      } else {
+        customScorerFn = null;
+        customScorerCode = '';
+        localStorage.removeItem('tetrisCustomScorer');
+      }
+      // Apply team name if present
+      if (typeof data.teamName === 'string' && data.teamName) {
+        teamName = data.teamName;
+        document.getElementById('team-name').value = teamName;
+        try { localStorage.setItem('tetrisTeamName', teamName); } catch (e) {}
+      }
+      // Apply seed if present
+      if (typeof data.seed === 'number' && data.seed >= 0) {
+        gameSeed = data.seed;
+        document.getElementById('seed-input').value = gameSeed;
+        try { localStorage.setItem('tetrisGameSeed', String(gameSeed)); } catch (e) {}
+      }
+      renderBreakdownPlaceholder();
+    } catch (err) {
+      alert('Invalid settings file: ' + err.message);
+    }
+    importFileInput.value = '';
+  };
+  reader.readAsText(file);
+});
+
+// ===== FORMULA CUSTOMIZATION UI =====
+const formulaKeys = ['lines', 'holes', 'bump', 'height', 'valley', 'total'];
+const formulaModal = document.getElementById('formula-modal');
+
+function isFormulaModalOpen() {
+  return !formulaModal.classList.contains('hidden');
+}
+
+function closeFormulaModal() {
+  formulaModal.classList.add('hidden');
+  if (formulaPausedGame) {
+    formulaPausedGame = false;
+    resumeGame();
+  }
+}
+
+function validateFormulaInput(key) {
+  const input = document.getElementById('formula-' + key);
+  const status = document.getElementById('formula-status-' + key);
+  const expr = input.value.trim();
+  if (expr === '') {
+    input.className = 'formula-input';
+    status.textContent = '(using default)';
+    status.className = 'formula-status ok';
+    return true;
+  }
+  const allowedSet = key === 'total' ? ALLOWED_TOTAL_VARS : ALLOWED_SUB_VARS;
+  try {
+    const tokens = tokenizeFormula(expr);
+    validateTokens(tokens, allowedSet);
+    const dummyVars = {};
+    allowedSet.forEach(v => dummyVars[v] = 1);
+    evaluateFormula([...tokens], dummyVars);
+    input.className = 'formula-input valid';
+    status.textContent = 'Valid';
+    status.className = 'formula-status ok';
+    return true;
+  } catch (e) {
+    input.className = 'formula-input invalid';
+    status.textContent = e.message;
+    status.className = 'formula-status err';
+    return false;
+  }
+}
+
+function validateAllFormulas() {
+  formulaKeys.forEach(key => validateFormulaInput(key));
+}
+
+const formulaRangeKeyMap = { lines: 'lines', holes: 'holes', bump: 'bumpiness', height: 'height', valley: 'valley', total: 'total' };
+
+function updateFormulaRangeDisplay() {
+  formulaKeys.forEach(key => {
+    const el = document.getElementById('formula-range-' + key);
+    const rangeKey = formulaRangeKeyMap[key];
+    const range = metricScoreRanges[rangeKey];
+    if (range && isFinite(range.min) && isFinite(range.max)) {
+      el.textContent = 'Score range (current/last game): ' + range.min.toFixed(2) + ' to ' + range.max.toFixed(2);
+    } else {
+      el.textContent = 'Score range: no data yet';
+    }
+  });
+}
+
+let formulaPausedGame = false;
+
+// Open modal
+document.getElementById('btn-custom-formulas').addEventListener('click', () => {
+  formulaPausedGame = false;
+  if (gameActive && !gamePaused && !gameOver) {
+    pauseGame();
+    formulaPausedGame = true;
+  }
+  formulaKeys.forEach(key => {
+    document.getElementById('formula-' + key).value = customFormulas[key];
+  });
+  formulaModal.classList.remove('hidden');
+  validateAllFormulas();
+  updateFormulaRangeDisplay();
+});
+
+// Close modal
+document.getElementById('formula-close').addEventListener('click', closeFormulaModal);
+
+// Click outside content to close
+formulaModal.addEventListener('click', (e) => {
+  if (e.target === formulaModal) closeFormulaModal();
+});
+
+// Variable chip tooltips (reuse heatmap tooltip to avoid overflow clipping)
+let activeTooltipChip = null;
+document.querySelectorAll('.formula-var[data-tip]').forEach(chip => {
+  chip.addEventListener('mouseenter', (e) => {
+    activeTooltipChip = chip;
+    tooltipEl.textContent = chip.getAttribute('data-tip');
+    tooltipEl.style.display = 'block';
+    tooltipEl.style.left = (e.pageX + 10) + 'px';
+    tooltipEl.style.top = (e.pageY + 10) + 'px';
+  });
+  chip.addEventListener('mousemove', (e) => {
+    tooltipEl.style.left = (e.pageX + 10) + 'px';
+    tooltipEl.style.top = (e.pageY + 10) + 'px';
+  });
+  chip.addEventListener('mouseleave', () => {
+    activeTooltipChip = null;
+    tooltipEl.style.display = 'none';
+  });
+  // Tap support for mobile
+  chip.addEventListener('click', (e) => {
+    if (activeTooltipChip === chip && tooltipEl.style.display === 'block') {
+      activeTooltipChip = null;
+      tooltipEl.style.display = 'none';
+      return;
+    }
+    activeTooltipChip = chip;
+    tooltipEl.textContent = chip.getAttribute('data-tip');
+    tooltipEl.style.display = 'block';
+    const rect = chip.getBoundingClientRect();
+    tooltipEl.style.left = rect.left + 'px';
+    tooltipEl.style.top = (rect.bottom + 6 + window.scrollY) + 'px';
+  });
+});
+// Dismiss tooltip when tapping elsewhere
+formulaModal.addEventListener('click', (e) => {
+  if (activeTooltipChip && !e.target.classList.contains('formula-var')) {
+    activeTooltipChip = null;
+    tooltipEl.style.display = 'none';
+  }
+});
+
+// Real-time validation on each input
+formulaKeys.forEach(key => {
+  document.getElementById('formula-' + key).addEventListener('input', () => {
+    validateFormulaInput(key);
+  });
+});
+
+// Autocomplete for formula inputs
+const AC_VAR_DESCRIPTIONS = {
+  lines: 'Lines cleared', holes: 'Trapped cells', bump: 'Column diffs',
+  height: 'Column heights sum', valley: 'Valley depth',
+  wLines: 'Lines weight', wHoles: 'Holes weight', wBump: 'Bump weight',
+  wHeight: 'Height weight', wValley: 'Valley weight',
+  goPenalty: 'Game-over penalty',
+  linesScore: 'Lines sub-score', holesScore: 'Holes sub-score',
+  bumpScore: 'Bump sub-score', heightScore: 'Height sub-score',
+  valleyScore: 'Valley sub-score'
+};
+const AC_SUB_VARS = ['lines','holes','bump','height','valley','wLines','wHoles','wBump','wHeight','wValley','goPenalty'];
+const AC_TOTAL_VARS = [...AC_SUB_VARS,'linesScore','holesScore','bumpScore','heightScore','valleyScore'];
+
+function getWordAtCursor(input) {
+  const val = input.value;
+  const pos = input.selectionStart;
+  let start = pos;
+  while (start > 0 && /[a-zA-Z_0-9]/.test(val[start - 1])) start--;
+  let end = pos;
+  while (end < val.length && /[a-zA-Z_0-9]/.test(val[end])) end++;
+  return { word: val.substring(start, pos), start, end };
+}
+
+function setupAutocomplete(key) {
+  const input = document.getElementById('formula-' + key);
+  const dropdown = document.getElementById('formula-ac-' + key);
+  const vars = key === 'total' ? AC_TOTAL_VARS : AC_SUB_VARS;
+  let activeIdx = -1;
+
+  function showSuggestions() {
+    const { word } = getWordAtCursor(input);
+    if (!word || word.length === 0) { hide(); return; }
+    const prefix = word.toLowerCase();
+    const matches = vars.filter(v => v.toLowerCase().startsWith(prefix) && v !== word);
+    if (matches.length === 0) { hide(); return; }
+    activeIdx = -1;
+    dropdown.innerHTML = '';
+    matches.forEach((m, i) => {
+      const item = document.createElement('div');
+      item.className = 'formula-autocomplete-item';
+      item.innerHTML = '<span>' + m + '</span><span class="ac-desc">' + (AC_VAR_DESCRIPTIONS[m] || '') + '</span>';
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        pickSuggestion(m);
+      });
+      dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  function hide() {
+    dropdown.style.display = 'none';
+    dropdown.innerHTML = '';
+    activeIdx = -1;
+  }
+
+  function pickSuggestion(varName) {
+    const { start, end } = getWordAtCursor(input);
+    const val = input.value;
+    input.value = val.substring(0, start) + varName + val.substring(end);
+    const newPos = start + varName.length;
+    input.setSelectionRange(newPos, newPos);
+    hide();
+    input.focus();
+    validateFormulaInput(key);
+  }
+
+  function setActive(idx) {
+    const items = dropdown.querySelectorAll('.formula-autocomplete-item');
+    items.forEach(it => it.classList.remove('active'));
+    if (idx >= 0 && idx < items.length) {
+      items[idx].classList.add('active');
+      items[idx].scrollIntoView({ block: 'nearest' });
+    }
+    activeIdx = idx;
+  }
+
+  input.addEventListener('input', showSuggestions);
+  input.addEventListener('blur', () => setTimeout(hide, 150));
+  input.addEventListener('keydown', (e) => {
+    if (dropdown.style.display !== 'block') return;
+    const items = dropdown.querySelectorAll('.formula-autocomplete-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActive(Math.min(activeIdx + 1, items.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActive(Math.max(activeIdx - 1, 0));
+    } else if ((e.key === 'Tab' || e.key === 'Enter') && activeIdx >= 0) {
+      e.preventDefault();
+      const name = items[activeIdx].querySelector('span').textContent;
+      pickSuggestion(name);
+    } else if (e.key === 'Escape') {
+      hide();
+    }
+  });
+}
+
+formulaKeys.forEach(key => setupAutocomplete(key));
+
+// Validate All button
+document.getElementById('formula-validate').addEventListener('click', validateAllFormulas);
+
+// Reset Defaults button in modal
+document.getElementById('formula-reset').addEventListener('click', () => {
+  formulaKeys.forEach(key => {
+    document.getElementById('formula-' + key).value = '';
+    document.getElementById('formula-status-' + key).textContent = '(using default)';
+    document.getElementById('formula-status-' + key).className = 'formula-status ok';
+    document.getElementById('formula-' + key).className = 'formula-input';
+  });
+});
+
+// Save & Close button
+document.getElementById('formula-save').addEventListener('click', () => {
+  formulaKeys.forEach(key => {
+    customFormulas[key] = document.getElementById('formula-' + key).value.trim();
+  });
+  compileFormulas();
+  saveCustomFormulas();
+  closeFormulaModal();
+});
+
+// ===== CUSTOM SCORER =====
+const scorerModal = document.getElementById('scorer-modal');
+const scorerCodeEl = document.getElementById('scorer-code');
+const scorerStatusEl = document.getElementById('scorer-status');
+
+function isScorerModalOpen() {
+  return !scorerModal.classList.contains('hidden');
+}
+
+let scorerPausedGame = false;
+let scorerCodeOnOpen = '';
+function openCustomScorer() {
+  scorerPausedGame = false;
+  if (gameActive && !gamePaused && !gameOver) {
+    pauseGame();
+    scorerPausedGame = true;
+  }
+  scorerCodeOnOpen = customScorerCode;
+  scorerCodeEl.value = customScorerCode;
+  updateScorerHighlight();
+  scorerStatusEl.textContent = customScorerFn ? 'Active' : '';
+  scorerStatusEl.style.color = customScorerFn ? '#0f0' : '#888';
+  document.getElementById('scorer-preset-trigger').textContent = '— Select a strategy —';
+  scorerUndoStack = [customScorerCode];
+  scorerRedoStack = [];
+  scorerModal.classList.remove('hidden');
+}
+
+function closeCustomScorer(force) {
+  const codeNow = scorerCodeEl.value.trim();
+  const changed = codeNow !== customScorerCode;
+  if (force !== true && changed) {
+    if (confirm('Apply changes before closing?')) {
+      if (!applyCustomScorer()) return;
+    }
+  }
+  scorerModal.classList.add('hidden');
+  if (scorerPausedGame) {
+    scorerPausedGame = false;
+    resumeGame();
+  }
+}
+
+function applyCustomScorer() {
+  const code = scorerCodeEl.value.trim();
+  if (!code) {
+    scorerStatusEl.textContent = 'No code entered';
+    scorerStatusEl.style.color = '#ff4444';
+    return false;
+  }
+  try {
+    const fn = new Function('board', 'linesCleared', code);
+    // Test with dummy board
+    const dummyBoard = Array.from({ length: 20 }, () => new Array(10).fill(0));
+    const result = fn(dummyBoard, 0);
+    if (typeof result !== 'number' || isNaN(result)) {
+      throw new Error('Function must return a number');
+    }
+    customScorerFn = fn;
+    customScorerCode = code;
+    localStorage.setItem('tetrisCustomScorer', code);
+    scorerStatusEl.textContent = 'Applied successfully (test returned ' + result + ')';
+    scorerStatusEl.style.color = '#0f0';
+    renderBreakdownPlaceholder();
+    return true;
+  } catch (e) {
+    scorerStatusEl.textContent = 'Error: ' + e.message;
+    scorerStatusEl.style.color = '#ff4444';
+    return false;
+  }
+}
+
+function clearCustomScorer() {
+  customScorerFn = null;
+  customScorerCode = '';
+  localStorage.removeItem('tetrisCustomScorer');
+  scorerCodeEl.value = '';
+  updateScorerHighlight();
+  document.getElementById('scorer-preset-trigger').textContent = '— Select a strategy —';
+  scorerStatusEl.textContent = 'Cleared';
+  scorerStatusEl.style.color = '#888';
+  renderBreakdownPlaceholder();
+}
+
+function loadCustomScorer() {
+  const saved = localStorage.getItem('tetrisCustomScorer');
+  if (saved) {
+    try {
+      const fn = new Function('board', 'linesCleared', saved);
+      const dummyBoard = Array.from({ length: 20 }, () => new Array(10).fill(0));
+      const result = fn(dummyBoard, 0);
+      if (typeof result === 'number' && !isNaN(result)) {
+        customScorerFn = fn;
+        customScorerCode = saved;
+      }
+    } catch (e) {
+      localStorage.removeItem('tetrisCustomScorer');
+    }
+  }
+}
+
+document.getElementById('btn-custom-scorer').addEventListener('click', openCustomScorer);
+document.getElementById('scorer-apply').addEventListener('click', applyCustomScorer);
+document.getElementById('scorer-clear').addEventListener('click', clearCustomScorer);
+document.getElementById('scorer-close').addEventListener('click', closeCustomScorer);
+document.getElementById('scorer-close-x').addEventListener('click', closeCustomScorer);
+const SCORER_PRESETS = {
+  flat: '// Penalize difference between tallest and shortest columns\nlet minH = 20, maxH = 0;\nfor (let c = 0; c < 10; c++) {\n  let h = 0;\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) { h = 20 - r; break; }\n  }\n  if (h > maxH) maxH = h;\n  if (h < minH) minH = h;\n}\nif (maxH === 0) return 0;\nreturn -(maxH - minH) * 3;',
+  rightclear: '// Reward keeping column 10 (index 9) empty for Tetrises\nlet penalty = 0;\nfor (let r = 0; r < 20; r++) {\n  if (board[r][9]) penalty += 5;\n}\nreturn -penalty;',
+  smooth: '// Penalize jagged surfaces — prefer gentle slopes\nlet jaggedness = 0;\nfor (let c = 0; c < 9; c++) {\n  let h1 = 0, h2 = 0;\n  for (let r = 0; r < 20; r++) { if (board[r][c]) { h1 = 20 - r; break; } }\n  for (let r = 0; r < 20; r++) { if (board[r][c+1]) { h2 = 20 - r; break; } }\n  let diff = Math.abs(h1 - h2);\n  if (diff > 1) jaggedness += diff * diff;\n}\nreturn -jaggedness * 0.5;',
+  tetris: '// Massively reward 4-line clears, penalize singles\nif (linesCleared === 4) return 500;\nif (linesCleared === 3) return 100;\nif (linesCleared === 2) return 20;\nif (linesCleared === 1) return -10;\nreturn 0;',
+  patience: '// Penalize clearing lines when board is low (save for bigger clears)\nlet maxH = 0;\nfor (let c = 0; c < 10; c++) {\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) { maxH = Math.max(maxH, 20 - r); break; }\n  }\n}\nif (linesCleared > 0 && linesCleared < 4 && maxH < 10) return -50;\nreturn 0;',
+  deephole: '// Penalize holes more when buried deeper\nlet penalty = 0;\nfor (let c = 0; c < 10; c++) {\n  let depth = 0;\n  let foundBlock = false;\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) { foundBlock = true; depth++; }\n    else if (foundBlock) penalty += depth;\n  }\n}\nreturn -penalty * 2;',
+  covered: '// Holes with more blocks above are penalized more\nlet penalty = 0;\nfor (let c = 0; c < 10; c++) {\n  let blocksAbove = 0;\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) blocksAbove++;\n    else if (blocksAbove > 0) penalty += blocksAbove;\n  }\n}\nreturn -penalty * 1.5;',
+  leftprotect: '// Protect left 4 columns where T, S, Z commonly stack\nlet penalty = 0;\nfor (let c = 0; c < 4; c++) {\n  let foundBlock = false;\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) foundBlock = true;\n    else if (foundBlock) penalty += 10;\n  }\n}\nreturn -penalty;',
+  danger: '// Exponentially penalize columns reaching above row 5\nlet penalty = 0;\nfor (let c = 0; c < 10; c++) {\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) {\n      let h = 20 - r;\n      if (h > 15) penalty += (h - 15) * (h - 15) * 10;\n      break;\n    }\n  }\n}\nreturn -penalty;',
+  headroom: '// Reward keeping at least 8 empty rows at top\nlet highestBlock = 20;\nfor (let c = 0; c < 10; c++) {\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) { highestBlock = Math.min(highestBlock, r); break; }\n  }\n}\nreturn highestBlock >= 8 ? 10 : -(8 - highestBlock) * 15;',
+  completable: '// Reward rows that are almost complete (8 or 9 of 10 filled)\nlet bonus = 0;\nfor (let r = 0; r < 20; r++) {\n  let filled = 0;\n  for (let c = 0; c < 10; c++) { if (board[r][c]) filled++; }\n  if (filled === 9) bonus += 30;\n  else if (filled === 8) bonus += 10;\n}\nreturn bonus;',
+  balance: '// Penalize when one side is much taller than the other\nlet leftH = 0, rightH = 0;\nfor (let c = 0; c < 5; c++) {\n  for (let r = 0; r < 20; r++) { if (board[r][c]) { leftH += 20 - r; break; } }\n}\nfor (let c = 5; c < 10; c++) {\n  for (let r = 0; r < 20; r++) { if (board[r][c]) { rightH += 20 - r; break; } }\n}\nreturn -Math.abs(leftH - rightH) * 2;',
+  edgewall: '// Reward keeping edges high and center low (funnel shape)\nlet score = 0;\nfor (let c = 0; c < 10; c++) {\n  let h = 0;\n  for (let r = 0; r < 20; r++) { if (board[r][c]) { h = 20 - r; break; } }\n  let distFromCenter = Math.abs(c - 4.5);\n  score += h * distFromCenter * 0.5;\n}\nreturn score;',
+  density: '// Prefer boards where lower rows are denser than upper rows\nlet score = 0;\nfor (let r = 0; r < 20; r++) {\n  let filled = 0;\n  for (let c = 0; c < 10; c++) { if (board[r][c]) filled++; }\n  let depth = 20 - r;\n  score += filled * depth * 0.3;\n}\nreturn score;',
+  survivor: '// Combine height alarm + hole avoidance + Tetris bonus\nlet score = 0;\nlet maxH = 0, holes = 0;\nfor (let c = 0; c < 10; c++) {\n  let foundBlock = false, colH = 0;\n  for (let r = 0; r < 20; r++) {\n    if (board[r][c]) { if (!foundBlock) colH = 20 - r; foundBlock = true; }\n    else if (foundBlock) holes++;\n  }\n  maxH = Math.max(maxH, colH);\n}\nif (maxH > 15) score -= (maxH - 15) * 50;\nscore -= holes * 8;\nif (linesCleared === 4) score += 200;\nreturn score;',
+  gambler: '// High-risk, high-reward: only value 4-line clears\nif (linesCleared === 4) return 1000;\nif (linesCleared > 0) return -200;\nlet well = 0;\nfor (let r = 0; r < 20; r++) { if (!board[r][9]) well++; }\nreturn well * 5;'
+};
+
+const presetTrigger = document.getElementById('scorer-preset-trigger');
+const presetMenu = document.getElementById('scorer-preset-menu');
+
+presetTrigger.addEventListener('click', () => {
+  presetMenu.classList.toggle('hidden');
+});
+
+presetMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.scorer-dropdown-item');
+  if (!item) return;
+  const val = item.dataset.value;
+  const code = SCORER_PRESETS[val];
+  if (code) {
+    scorerUndoPush();
+    scorerCodeEl.value = code;
+    updateScorerHighlight();
+    presetTrigger.textContent = item.textContent;
+    scorerStatusEl.textContent = 'Strategy loaded — click Apply to activate';
+    scorerStatusEl.style.color = '#CC00FF';
+  }
+  presetMenu.classList.add('hidden');
+});
+
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('scorer-preset-wrapper').contains(e.target)) {
+    presetMenu.classList.add('hidden');
+  }
+});
+
+// Undo/Redo for scorer textarea
+let scorerUndoStack = [];
+let scorerRedoStack = [];
+function scorerUndoPush() {
+  scorerUndoStack.push(scorerCodeEl.value);
+  if (scorerUndoStack.length > 50) scorerUndoStack.shift();
+  scorerRedoStack = [];
+}
+function scorerUndo() {
+  if (scorerUndoStack.length === 0) return;
+  scorerRedoStack.push(scorerCodeEl.value);
+  scorerCodeEl.value = scorerUndoStack.pop();
+  updateScorerHighlight();
+  scorerCodeEl.focus();
+}
+function scorerRedo() {
+  if (scorerRedoStack.length === 0) return;
+  scorerUndoStack.push(scorerCodeEl.value);
+  scorerCodeEl.value = scorerRedoStack.pop();
+  updateScorerHighlight();
+  scorerCodeEl.focus();
+}
+document.getElementById('scorer-undo').addEventListener('click', scorerUndo);
+document.getElementById('scorer-redo').addEventListener('click', scorerRedo);
+scorerCodeEl.addEventListener('keydown', (e) => {
+  if (e.key === 'z' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+    e.preventDefault();
+    scorerUndo();
+  } else if ((e.key === 'y' && (e.ctrlKey || e.metaKey)) || (e.key === 'z' && (e.ctrlKey || e.metaKey) && e.shiftKey)) {
+    e.preventDefault();
+    scorerRedo();
+  }
+});
+let scorerInputTimer = null;
+const scorerHighlightEl = document.getElementById('scorer-highlight');
+
+function highlightJS(code) {
+  const keywords = /\b(if|else|for|while|do|return|let|const|var|function|new|typeof|break|continue|switch|case|default|true|false|null|undefined)\b/g;
+  const numbers = /\b(\d+\.?\d*)\b/g;
+  const strings = /(["'`])(?:(?!\1)[^\\]|\\.)*?\1/g;
+  const comments = /(\/\/.*$|\/\*[\s\S]*?\*\/)/gm;
+  const fns = /\b([a-zA-Z_]\w*)\s*(?=\()/g;
+  const props = /\b(board|linesCleared|Math|length)\b/g;
+
+  // Escape HTML
+  let html = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  // Tokenize to avoid overlapping replacements
+  const tokens = [];
+  function collect(regex, cls) {
+    let m;
+    const re = new RegExp(regex.source, regex.flags);
+    while ((m = re.exec(code)) !== null) {
+      tokens.push({ start: m.index, end: m.index + m[0].length, cls: cls, text: m[0] });
+    }
+  }
+  collect(comments, 'sh-cmt');
+  collect(strings, 'sh-str');
+  collect(keywords, 'sh-kw');
+  collect(numbers, 'sh-num');
+  collect(props, 'sh-prop');
+  collect(fns, 'sh-fn');
+
+  // Sort by start position, prioritize comments/strings
+  const priority = { 'sh-cmt': 0, 'sh-str': 1, 'sh-kw': 2, 'sh-prop': 3, 'sh-fn': 4, 'sh-num': 5 };
+  tokens.sort((a, b) => a.start - b.start || priority[a.cls] - priority[b.cls]);
+
+  // Build result avoiding overlaps
+  let result = '';
+  let pos = 0;
+  const used = new Array(code.length).fill(false);
+  for (const tok of tokens) {
+    let overlap = false;
+    for (let i = tok.start; i < tok.end; i++) {
+      if (used[i]) { overlap = true; break; }
+    }
+    if (overlap) continue;
+    for (let i = tok.start; i < tok.end; i++) used[i] = true;
+  }
+  // Rebuild with spans
+  const activeTokens = tokens.filter(tok => {
+    for (let i = tok.start; i < tok.end; i++) if (!used[i]) return false;
+    return true;
+  });
+  // Re-filter keeping first-assigned tokens
+  const assigned = new Array(code.length).fill(null);
+  for (const tok of tokens) {
+    let canUse = true;
+    for (let i = tok.start; i < tok.end; i++) {
+      if (assigned[i] !== null) { canUse = false; break; }
+    }
+    if (canUse) {
+      for (let i = tok.start; i < tok.end; i++) assigned[i] = tok;
+    }
+  }
+  result = '';
+  pos = 0;
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  while (pos < code.length) {
+    const tok = assigned[pos];
+    if (tok && tok.start === pos) {
+      result += '<span class="' + tok.cls + '">' + esc(tok.text) + '</span>';
+      pos = tok.end;
+    } else {
+      result += esc(code[pos]);
+      pos++;
+    }
+  }
+  return result + '\n';
+}
+
+function updateScorerHighlight() {
+  scorerHighlightEl.innerHTML = highlightJS(scorerCodeEl.value);
+  scorerHighlightEl.scrollTop = scorerCodeEl.scrollTop;
+}
+
+scorerCodeEl.addEventListener('input', () => {
+  updateScorerHighlight();
+  clearTimeout(scorerInputTimer);
+  scorerInputTimer = setTimeout(() => { scorerUndoPush(); }, 500);
+});
+scorerCodeEl.addEventListener('scroll', () => {
+  scorerHighlightEl.scrollTop = scorerCodeEl.scrollTop;
+});
+
+scorerModal.addEventListener('click', (e) => {
+  if (e.target === scorerModal) closeCustomScorer();
+});
+
+// ===== AUTOPLAY PLACEMENT SIMULATION =====
+// Simulates gravity + autoplay delay race to determine where a piece actually lands.
+// Returns { x, y, rotation, premature } — premature=true if piece locked before hardDrop.
+function simulateAutoplayPlacement(playType, bestMove, useHold, boardState, currentDropSpeed, currentDelay) {
+  // Build action sequence dynamically: [hold?] → [rotations] → [lateral moves computed after rotations] → [hardDrop]
+  // Lateral moves are computed AFTER rotations execute, matching the main game's recursive approach
+  const spawnShape = getPieceShape(playType, 0);
+  const spawnX = Math.floor((BOARD_WIDTH - spawnShape[0].length) / 2);
+  const targetX = bestMove.x;
+
+  let x = spawnX, y = 0, rot = 0;
+  let shape = spawnShape;
+  let time = 0, gravityCount = 0;
+  let lockStart = -1;
+  let phase = 'hold'; // phases: hold → rotate → move → drop
+
+  // Action counters
+  let rotationsLeft = bestMove.rotation;
+  let holdDone = !useHold;
+
+  function applyGravity() {
+    const newGravCount = Math.floor(time / currentDropSpeed);
+    const drops = newGravCount - gravityCount;
+    for (let d = 0; d < drops; d++) {
+      const tickTime = (gravityCount + d + 1) * currentDropSpeed;
+      if (!collides(shape, x, y + 1, boardState)) {
+        y++;
+        lockStart = -1;
+      } else {
+        if (lockStart === -1) lockStart = tickTime;
+        if (tickTime - lockStart >= currentDropSpeed) {
+          return true; // premature lock
+        }
+      }
+    }
+    gravityCount = newGravCount;
+    return false;
+  }
+
+  // Safety limit to prevent infinite loops
+  for (let step = 0; step < 200; step++) {
+    time += currentDelay;
+    if (applyGravity()) return { x, y, rotation: rot, premature: true };
+
+    if (!holdDone) {
+      holdDone = true;
+      continue; // hold costs one tick
+    }
+
+    if (rotationsLeft > 0) {
+      const newRot = (rot + 1) % 4;
+      const newShape = getPieceShape(playType, newRot);
+      const kicks = [0, -1, 1, -2, 2];
+      for (const kick of kicks) {
+        let inBounds = true;
+        for (let r = 0; r < newShape.length; r++) {
+          for (let c = 0; c < newShape[r].length; c++) {
+            if (!newShape[r][c]) continue;
+            const bx = x + kick + c;
+            if (bx < 0 || bx >= BOARD_WIDTH) { inBounds = false; break; }
+          }
+          if (!inBounds) break;
+        }
+        if (inBounds && !collides(newShape, x + kick, y, boardState)) {
+          x += kick; rot = newRot; shape = newShape;
+          if (!collides(shape, x, y + 1, boardState)) lockStart = -1;
+          break;
+        }
+      }
+      rotationsLeft--;
+      continue;
+    }
+
+    // Lateral movement — computed dynamically based on current x after rotations/kicks
+    if (x < targetX) {
+      if (!collides(shape, x + 1, y, boardState)) {
+        x++;
+        if (!collides(shape, x, y + 1, boardState)) lockStart = -1;
+      }
+      continue;
+    }
+    if (x > targetX) {
+      if (!collides(shape, x - 1, y, boardState)) {
+        x--;
+        if (!collides(shape, x, y + 1, boardState)) lockStart = -1;
+      }
+      continue;
+    }
+
+    // At target — hard drop
+    while (!collides(shape, x, y + 1, boardState)) y++;
+    return { x, y, rotation: rot, premature: false };
+  }
+  // Safety fallback
+  return { x, y, rotation: rot, premature: true };
+}
+
+// ===== CEM WEIGHT TRAINING =====
+let cemPop = 30;
+const CEM_ELITE_FRAC = 0.17;
+let cemGens = 30;
+let cemPieces = 300;
+const CEM_WEIGHT_KEYS = ['lines', 'holes', 'bumpiness', 'height', 'valley'];
+const CEM_RANGES = { lines: [0, 2], holes: [-2, 0], bumpiness: [-1, 0], height: [-0.1, 0], valley: [-1, 0] };
+
+let cemRunning = false;
+let cemStopped = false;
+
+function simulateHeadlessGame(candidateWeights, seed, maxPieces) {
+  const b = [];
+  for (let r = 0; r < BOARD_HEIGHT; r++) b.push(new Array(BOARD_WIDTH).fill(0));
+  const rng = mulberry32(seed);
+  let simLevel = 1, simLines = 0, simLevelLines = 0, simAIScore = 0, piecesPlaced = 0;
+  let simHoldType = -1, simCanHold = true, simDropSpeed = 1000;
+
+  function simRandomPiece() {
+    if (simLevel < 40) return Math.floor(rng() * 7);
+    const la = simLevel - 39;
+    const iProb = Math.max(0, 1 / 7 - la * 0.0006);
+    const oProb = (1 - iProb) / 6;
+    const r2 = rng();
+    let cum = iProb;
+    if (r2 < cum) return 0;
+    for (let i = 1; i < 7; i++) { cum += oProb; if (r2 < cum) return i; }
+    return 6;
+  }
+
+  function simCheckLevelUp() {
+    const thresh = () => {
+      if (simLevel < 10) return 10; if (simLevel < 20) return 12;
+      if (simLevel < 30) return 14; if (simLevel < 40) return 16;
+      if (simLevel < 50) return 18; return 20;
+    };
+    let t = thresh();
+    while (simLevelLines >= t) { simLevelLines -= t; simLevel++; t = thresh(); }
+    simDropSpeed = Math.max(50, 1000 - (simLevel - 1) * 25);
+  }
+
+  function simPlacePieceAt(pieceType, rotation, px, py) {
+    const shape = getPieceShape(pieceType, rotation);
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const by = py + r, bx = px + c;
+        if (by < 0) return false;
+        b[by][bx] = pieceType + 1;
+      }
+    }
+    return true;
+  }
+
+  function simClearLines() {
+    let cleared = 0;
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (b[y].every(c => c !== 0)) {
+        b.splice(y, 1);
+        b.unshift(new Array(BOARD_WIDTH).fill(0));
+        y++; cleared++;
+      }
+    }
+    return cleared;
+  }
+
+  const savedWeights = { ...weights };
+  Object.assign(weights, candidateWeights);
+
+  // Match main game's 3-call startup: discard first, current = second, next = third
+  simRandomPiece();
+  let currentType = simRandomPiece();
+  let nextType = simRandomPiece();
+
+  // Theoretical max lines: each piece has 4 blocks, each line needs 10 blocks
+  const theoreticalMaxLines = Math.floor(maxPieces * 4 / 10);
+  for (let p = 0; p < maxPieces; p++) {
+    // Evaluate current piece
+    const currentEval = calculateBestMove(currentType, b);
+    let bestMove = currentEval.bestMove;
+    let useHold = false;
+    let playType = currentType;
+
+    // Consider hold (same logic as main autoplay)
+    if (simCanHold) {
+      const holdPieceType = simHoldType >= 0 ? simHoldType : nextType;
+      const holdSpawnShape = getPieceShape(holdPieceType, 0);
+      const holdSpawnX = Math.floor((BOARD_WIDTH - holdSpawnShape[0].length) / 2);
+      if (!collides(holdSpawnShape, holdSpawnX, 0, b)) {
+        const holdEval = calculateBestMove(holdPieceType, b);
+        if (holdEval.bestMove && (!bestMove || holdEval.bestMove.score > bestMove.score)) {
+          bestMove = holdEval.bestMove;
+          useHold = true;
+          playType = holdPieceType;
+        }
+      }
+    }
+
+    if (!bestMove || bestMove.score <= -100000) break;
+    simAIScore += bestMove.score;
+
+    // Execute hold swap if needed
+    if (useHold) {
+      if (simHoldType === -1) {
+        simHoldType = currentType;
+        currentType = nextType;
+        nextType = simRandomPiece();
+      } else {
+        const tmp = simHoldType;
+        simHoldType = currentType;
+        currentType = tmp;
+      }
+      simCanHold = false;
+    }
+
+    // Simulate gravity + autoplay delay to determine actual landing position
+    const placement = simulateAutoplayPlacement(playType, bestMove, useHold, b, simDropSpeed, 10);
+    if (!simPlacePieceAt(playType, placement.rotation, placement.x, placement.y)) break;
+
+    const cleared = simClearLines();
+    simLines += cleared;
+    simLevelLines += cleared;
+    if (cleared > 0) simCheckLevelUp();
+    piecesPlaced++;
+    simCanHold = true;
+
+    // Stop early if theoretical max lines reached (AI is playing perfectly)
+    if (simLines >= theoreticalMaxLines) break;
+
+    // Game over if top row still has blocks after line clears
+    if (b[0].some(c => c !== 0)) break;
+
+    // Always advance piece queue after placing (same as main game's nextPiece)
+    currentType = nextType;
+    nextType = simRandomPiece();
+  }
+
+  Object.assign(weights, savedWeights);
+  return { aiScore: simAIScore, linesCleared: simLines, piecesPlaced };
+}
+
+function isCemModalOpen() {
+  return !document.getElementById('cem-modal').classList.contains('hidden');
+}
+
+let cemPausedGame = false;
+function closeCemModal() {
+  if (cemRunning) return;
+  document.getElementById('cem-modal').classList.add('hidden');
+  if (cemPausedGame) {
+    cemPausedGame = false;
+    resumeGame();
+  }
+}
+
+function runCEMTraining() {
+  cemRunning = true;
+  cemStopped = false;
+  document.getElementById('cem-stop').disabled = false;
+  document.getElementById('cem-close').disabled = true;
+
+  // Init distribution: mean = current weights, sigma = range/4
+  const mu = {};
+  const sigma = {};
+  CEM_WEIGHT_KEYS.forEach(k => {
+    mu[k] = weights[k];
+    sigma[k] = (CEM_RANGES[k][1] - CEM_RANGES[k][0]) / 4;
+  });
+
+  let globalBestFit = -1;
+  let globalBestWeights = { ...weights };
+  let gen = 0;
+
+  function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+  function gaussRandom() {
+    // Box-Muller transform
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  }
+
+  function nextGeneration() {
+    if (gen >= cemGens || cemStopped) {
+      finishTraining();
+      return;
+    }
+    gen++;
+    const genSeed = 42 + gen;
+    const candidates = [];
+    for (let i = 0; i < cemPop; i++) {
+      const w = {};
+      CEM_WEIGHT_KEYS.forEach(k => {
+        w[k] = clamp(mu[k] + gaussRandom() * sigma[k], CEM_RANGES[k][0], CEM_RANGES[k][1]);
+      });
+      candidates.push(w);
+    }
+
+    let candIdx = 0;
+    const results = [];
+
+    function evalNextCandidate() {
+      if (candIdx >= cemPop || cemStopped) {
+        // Generation done — update distribution
+        if (!cemStopped) {
+          results.sort((a, b2) => b2.fitness - a.fitness);
+          const cemElite = Math.max(2, Math.round(cemPop * CEM_ELITE_FRAC));
+          const elites = results.slice(0, cemElite);
+
+          const genBest = elites[0].fitness;
+          document.getElementById('cem-gen-best').textContent = genBest + ' lines';
+
+          if (genBest > globalBestFit) {
+            globalBestFit = genBest;
+            globalBestWeights = { ...elites[0].weights };
+            document.getElementById('cem-best-fit').textContent = globalBestFit + ' lines';
+            updateCemWeightsPreview(globalBestWeights);
+            // Live-update sliders
+            syncSliders();
+          }
+
+          // Update mu and sigma from elites
+          CEM_WEIGHT_KEYS.forEach(k => {
+            const vals = elites.map(e => e.weights[k]);
+            mu[k] = vals.reduce((a, b2) => a + b2, 0) / vals.length;
+            const variance = vals.reduce((a, v) => a + (v - mu[k]) ** 2, 0) / vals.length;
+            sigma[k] = Math.max(0.01, Math.sqrt(variance));
+          });
+        }
+
+        document.getElementById('cem-status').textContent = 'Generation ' + gen + ' complete';
+        setTimeout(nextGeneration, 0);
+        return;
+      }
+
+      const w = candidates[candIdx];
+      const fit = simulateHeadlessGame(w, genSeed, cemPieces);
+      results.push({ weights: w, fitness: fit.linesCleared });
+      candIdx++;
+
+      // Update UI
+      const totalCands = gen > 1 ? ((gen - 1) * cemPop + candIdx) : candIdx;
+      const totalAll = cemGens * cemPop;
+      const pct = Math.round(totalCands / totalAll * 100);
+      document.getElementById('cem-progress').style.width = pct + '%';
+      document.getElementById('cem-gen').textContent = gen + ' / ' + cemGens;
+      document.getElementById('cem-cand').textContent = candIdx + ' / ' + cemPop;
+      document.getElementById('cem-status').textContent = 'Evaluating...';
+
+      setTimeout(evalNextCandidate, 0);
+    }
+
+    evalNextCandidate();
+  }
+
+  function finishTraining() {
+    cemRunning = false;
+    // Apply best weights
+    Object.assign(weights, globalBestWeights);
+    syncSliders();
+    saveWeights();
+
+    document.getElementById('cem-progress').style.width = '100%';
+    document.getElementById('cem-status').textContent = cemStopped
+      ? 'Stopped early. Best: ' + globalBestFit + ' lines'
+      : 'Complete! Best: ' + globalBestFit + ' lines';
+    document.getElementById('cem-stop').disabled = true;
+    document.getElementById('cem-close').disabled = false;
+    setCemParamInputsEnabled(true);
+    document.getElementById('cem-start-row').style.display = '';
+  }
+
+  nextGeneration();
+}
+
+function updateCemWeightsPreview(w) {
+  const parts = CEM_WEIGHT_KEYS.map(k => k.substring(0, 3) + ': <span>' + formatWeight(k, w[k]) + '</span>');
+  document.getElementById('cem-weights-preview').innerHTML = 'Best weights: ' + parts.join('  ');
+}
+
+// CEM event wiring
+function setCemParamInputsEnabled(enabled) {
+  ['cem-param-pop', 'cem-param-gens', 'cem-param-pieces'].forEach(id => {
+    document.getElementById(id).disabled = !enabled;
+  });
+  document.getElementById('cem-start').disabled = !enabled;
+}
+
+document.getElementById('btn-train-weights').addEventListener('click', () => {
+  if (cemRunning) return;
+  cemPausedGame = false;
+  if (gameActive && !gamePaused && !gameOver) {
+    pauseGame();
+    cemPausedGame = true;
+  }
+  const modal = document.getElementById('cem-modal');
+  // Reset UI
+  document.getElementById('cem-progress').style.width = '0%';
+  document.getElementById('cem-param-pop').value = cemPop;
+  document.getElementById('cem-param-gens').value = cemGens;
+  document.getElementById('cem-param-pieces').value = cemPieces;
+  document.getElementById('cem-gen').textContent = '0 / ' + cemGens;
+  document.getElementById('cem-cand').textContent = '0 / ' + cemPop;
+  document.getElementById('cem-best-fit').textContent = '--';
+  document.getElementById('cem-gen-best').textContent = '--';
+  updateCemWeightsPreview(weights);
+  document.getElementById('cem-status').textContent = 'Configure parameters and press Start';
+  setCemParamInputsEnabled(true);
+  document.getElementById('cem-stop').disabled = true;
+  document.getElementById('cem-close').disabled = false;
+  document.getElementById('cem-start-row').style.display = '';
+  modal.classList.remove('hidden');
+});
+
+document.getElementById('cem-start').addEventListener('click', () => {
+  if (cemRunning) return;
+  // Read and validate parameters from inputs
+  const popVal = parseInt(document.getElementById('cem-param-pop').value) || 30;
+  const gensVal = parseInt(document.getElementById('cem-param-gens').value) || 30;
+  const piecesVal = parseInt(document.getElementById('cem-param-pieces').value) || 300;
+  cemPop = Math.max(5, Math.min(200, popVal));
+  cemGens = Math.max(1, Math.min(200, gensVal));
+  cemPieces = Math.max(50, Math.min(5000, piecesVal));
+  // Update inputs to clamped values
+  document.getElementById('cem-param-pop').value = cemPop;
+  document.getElementById('cem-param-gens').value = cemGens;
+  document.getElementById('cem-param-pieces').value = cemPieces;
+  // Disable inputs during training
+  setCemParamInputsEnabled(false);
+  document.getElementById('cem-start-row').style.display = 'none';
+  document.getElementById('cem-gen').textContent = '0 / ' + cemGens;
+  document.getElementById('cem-cand').textContent = '0 / ' + cemPop;
+  document.getElementById('cem-status').textContent = 'Starting...';
+  runCEMTraining();
+});
+
+document.getElementById('cem-stop').addEventListener('click', () => {
+  cemStopped = true;
+});
+
+document.getElementById('cem-close').addEventListener('click', closeCemModal);
+document.getElementById('cem-close-x').addEventListener('click', () => {
+  if (!cemRunning) closeCemModal();
+});
+
+// ===== HEADLESS SIMULATION =====
+let simRunning = false;
+let simStopped = false;
+let lastSimResults = null;
+let lastSimPieceLog = null;
+let simResultsExported = false;
+
+function isSimModalOpen() {
+  return !document.getElementById('sim-modal').classList.contains('hidden');
+}
+
+let simPausedGame = false;
+function closeSimModal() {
+  if (simRunning) return;
+  if (lastSimResults && !simResultsExported) {
+    if (!confirm('Simulation results have not been exported. Close without exporting?')) return;
+  }
+  document.getElementById('sim-modal').classList.add('hidden');
+  if (simPausedGame) {
+    simPausedGame = false;
+    resumeGame();
+  }
+}
+
+function runSimulation() {
+  simRunning = true;
+  simStopped = false;
+  simResultsExported = false;
+  document.getElementById('sim-stop').disabled = false;
+  document.getElementById('sim-close').disabled = true;
+  document.getElementById('sim-export').disabled = true;
+  document.getElementById('sim-export-log').disabled = true;
+
+  const seed = gameSeed !== 0 ? gameSeed : Math.floor(Math.random() * 4294967295) + 1;
+  document.getElementById('sim-seed').textContent = seed;
+
+  // Config fingerprint for cross-machine verification
+  const cfgStr = JSON.stringify({
+    w: weights, f: customFormulas,
+    cs: customScorerCode || '', seed: seed
+  });
+  let cfgHash = 0;
+  for (let i = 0; i < cfgStr.length; i++) {
+    cfgHash = ((cfgHash << 5) - cfgHash + cfgStr.charCodeAt(i)) | 0;
+  }
+  const fingerprint = (cfgHash >>> 0).toString(16).toUpperCase().padStart(8, '0');
+  document.getElementById('sim-fingerprint').textContent = fingerprint;
+  const b = [];
+  for (let r = 0; r < BOARD_HEIGHT; r++) b.push(new Array(BOARD_WIDTH).fill(0));
+  const rng = mulberry32(seed);
+  let simLevel = 1, simLines = 0, simLevelLines = 0, simScore = 0;
+  let simAIScore = 0, piecesPlaced = 0, prematureLocks = 0;
+  let simHoldType = -1, simCanHold = true, simDropSpeed = 1000;
+  const simStartTime = performance.now();
+
+  // Full placement + spawn log (sliced to last 300 at export)
+  const SIM_LOG_MAX = 300;
+  const simPlacementLog = [];   // per-placement: { type, holdUsed, holdWasEmpty, x, y, rotation }
+  const simSpawnLog = [];       // spawn queue in RNG order (for replay piece feeding)
+  // Per-placement state snapshots for computing starting state
+  const simStateLog = [];       // per-placement: { holdType, lines, level, levelLines }
+  let simPlacementSeq = 0;
+
+  function simRandomPiece() {
+    if (simLevel < 40) return Math.floor(rng() * 7);
+    const la = simLevel - 39;
+    const iProb = Math.max(0, 1 / 7 - la * 0.0006);
+    const oProb = (1 - iProb) / 6;
+    const r2 = rng();
+    let cum = iProb;
+    if (r2 < cum) return 0;
+    for (let i = 1; i < 7; i++) { cum += oProb; if (r2 < cum) return i; }
+    return 6;
+  }
+
+  // Wrapper that logs every RNG-generated piece to the spawn queue
+  function simRandomPieceLogged() {
+    const type = simRandomPiece();
+    simSpawnLog.push(type);
+    return type;
+  }
+
+  function simCheckLevelUp() {
+    const thresh = () => {
+      if (simLevel < 10) return 10; if (simLevel < 20) return 12;
+      if (simLevel < 30) return 14; if (simLevel < 40) return 16;
+      if (simLevel < 50) return 18; return 20;
+    };
+    let t = thresh();
+    while (simLevelLines >= t) { simLevelLines -= t; simLevel++; t = thresh(); }
+    simDropSpeed = Math.max(50, 1000 - (simLevel - 1) * 25);
+  }
+
+  function simPlacePieceAt(pieceType, rotation, px, py) {
+    const shape = getPieceShape(pieceType, rotation);
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (!shape[r][c]) continue;
+        const by = py + r, bx = px + c;
+        if (by < 0) return false;
+        b[by][bx] = pieceType + 1;
+      }
+    }
+    return true;
+  }
+
+  function simClearLines() {
+    let cleared = 0;
+    for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+      if (b[y].every(c => c !== 0)) {
+        b.splice(y, 1);
+        b.unshift(new Array(BOARD_WIDTH).fill(0));
+        y++; cleared++;
+      }
+    }
+    return cleared;
+  }
+
+  function renderSimBoard() {
+    let ascii = '';
+    for (let r = 0; r < BOARD_HEIGHT; r++) {
+      const label = r < 10 ? ' ' + r : '' + r;
+      let row = label + ' |';
+      for (let c = 0; c < BOARD_WIDTH; c++) {
+        row += b[r][c] ? '\u2588' : '\u00B7';
+      }
+      row += '|';
+      ascii += row + '\n';
+    }
+    ascii += '   +' + '-'.repeat(BOARD_WIDTH) + '+\n';
+    ascii += '   ';
+    for (let c = 0; c < BOARD_WIDTH; c++) ascii += c;
+    document.getElementById('sim-board').textContent = ascii;
+  }
+
+  function updateSimUI(forceBoard) {
+    document.getElementById('sim-score').textContent = fmtNum(simScore);
+    document.getElementById('sim-level').textContent = fmtNum(simLevel);
+    document.getElementById('sim-lines').textContent = fmtNum(simLines);
+    document.getElementById('sim-pieces').textContent = fmtNum(piecesPlaced);
+    document.getElementById('sim-ai-score').textContent = (Math.round(simAIScore * 10) / 10).toLocaleString();
+    document.getElementById('sim-premature').textContent = fmtNum(prematureLocks);
+    document.getElementById('sim-iprob').textContent = fmtIProb(simLevel);
+    const elapsed = (performance.now() - simStartTime) / 1000;
+    document.getElementById('sim-elapsed').textContent = elapsed < 60
+      ? elapsed.toFixed(1) + 's'
+      : Math.floor(elapsed / 60) + 'm ' + (elapsed % 60).toFixed(1) + 's';
+    if (forceBoard || piecesPlaced % 10 === 0) renderSimBoard();
+  }
+
+  function finishSim(reason) {
+    simRunning = false;
+
+    // Compute the last SIM_LOG_MAX placements and their correct starting state
+    const totalPl = simPlacementLog.length;
+    const sliceStart = Math.max(0, totalPl - SIM_LOG_MAX);
+    const exportPlacements = simPlacementLog.slice(sliceStart);
+
+    // Compute starting board by replaying placements before the slice point
+    const startBoard = [];
+    for (let r = 0; r < BOARD_HEIGHT; r++) startBoard.push(new Array(BOARD_WIDTH).fill(0));
+    for (let i = 0; i < sliceStart; i++) {
+      const pl = simPlacementLog[i];
+      const shape = getPieceShape(pl.type, pl.rotation);
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (!shape[r][c]) continue;
+          const by = pl.y + r, bx = pl.x + c;
+          if (by >= 0 && by < BOARD_HEIGHT) startBoard[by][bx] = pl.type + 1;
+        }
+      }
+      // Clear lines
+      for (let y = BOARD_HEIGHT - 1; y >= 0; y--) {
+        if (startBoard[y].every(c => c !== 0)) {
+          startBoard.splice(y, 1);
+          startBoard.unshift(new Array(BOARD_WIDTH).fill(0));
+          y++;
+        }
+      }
+    }
+
+    // Get state snapshot at slice point
+    const startState = sliceStart > 0
+      ? simStateLog[sliceStart]
+      : { holdType: -1, lines: 0, level: 1, levelLines: 0 };
+
+    // Compute spawn queue offsets
+    // Each placement consumes 1 spawn (the currentType) + 1 extra if hold-with-empty
+    let spawnsBeforeSlice = 0;
+    for (let i = 0; i < sliceStart; i++) {
+      spawnsBeforeSlice++;
+      if (simPlacementLog[i].holdWasEmpty) spawnsBeforeSlice++;
+    }
+    // Count spawns needed for the exported placements (excludes unplaced trailing spawns)
+    let spawnsForExport = 0;
+    for (const pl of exportPlacements) {
+      spawnsForExport++;
+      if (pl.holdWasEmpty) spawnsForExport++;
+    }
+    const exportSpawnQueue = simSpawnLog.slice(spawnsBeforeSlice, spawnsBeforeSlice + spawnsForExport);
+
+    lastSimPieceLog = {
+      version: 2,
+      teamName: teamName || null,
+      timestamp: new Date().toISOString(),
+      result: reason.includes('Game Over') ? 'Game Over' : 'Stopped',
+      seed: seed,
+      totalPiecesPlaced: piecesPlaced,
+      logSize: exportPlacements.length,
+      startingBoardState: startBoard,
+      startingHoldPiece: startState.holdType >= 0 ? PIECE_NAMES[startState.holdType] : null,
+      startingLines: startState.lines,
+      startingLevel: startState.level,
+      startingLevelLines: startState.levelLines,
+      pieces: exportSpawnQueue.map((t, i) => ({ piece: spawnsBeforeSlice + i + 1, type: PIECE_NAMES[t] }))
+    };
+    lastSimResults = {
+      version: 1,
+      teamName: teamName || null,
+      timestamp: new Date().toISOString(),
+      result: reason.includes('Game Over') ? 'Game Over' : 'Stopped',
+      seed: seed,
+      score: simScore,
+      level: simLevel,
+      lines: simLines,
+      pieces: piecesPlaced,
+      cumulativeAIScore: Math.round(simAIScore * 10) / 10,
+      prematureLocks: prematureLocks,
+      autoplayDelay: autoplayDelay,
+      weights: { ...weights },
+      formulas: { ...customFormulas },
+      customScorer: customScorerCode || null,
+      elapsedSeconds: Math.round((performance.now() - simStartTime) / 100) / 10,
+      configFingerprint: fingerprint
+    };
+    const stopBtn = document.getElementById('sim-stop');
+    stopBtn.textContent = 'Start';
+    stopBtn.disabled = false;
+    document.getElementById('sim-close').disabled = false;
+    document.getElementById('sim-export').disabled = false;
+    document.getElementById('sim-export-log').disabled = false;
+    document.getElementById('sim-status').textContent = reason;
+    updateSimUI(true);
+  }
+
+  // Match main game's 3-call startup: discard first, current = second, next = third
+  simRandomPiece();  // discard (not logged)
+  let currentType = simRandomPieceLogged();
+  let nextType = simRandomPieceLogged();
+
+  const PIECES_PER_FRAME = 200;
+
+  function simBatch() {
+    for (let i = 0; i < PIECES_PER_FRAME; i++) {
+      if (simStopped) { finishSim('Stopped — ' + fmtNum(simLines) + ' lines, ' + fmtNum(piecesPlaced) + ' pieces'); return; }
+
+      // Evaluate current piece
+      const currentEval = calculateBestMove(currentType, b);
+      let bestMove = currentEval.bestMove;
+      let useHold = false;
+      let playType = currentType;
+
+      // Consider hold (same logic as main autoplay)
+      if (simCanHold) {
+        const holdPieceType = simHoldType >= 0 ? simHoldType : nextType;
+        const holdSpawnShape = getPieceShape(holdPieceType, 0);
+        const holdSpawnX = Math.floor((BOARD_WIDTH - holdSpawnShape[0].length) / 2);
+        if (!collides(holdSpawnShape, holdSpawnX, 0, b)) {
+          const holdEval = calculateBestMove(holdPieceType, b);
+          if (holdEval.bestMove && (!bestMove || holdEval.bestMove.score > bestMove.score)) {
+            bestMove = holdEval.bestMove;
+            useHold = true;
+            playType = holdPieceType;
+          }
+        }
+      }
+
+      if (!bestMove || bestMove.score <= -100000) {
+        finishSim('Game Over — ' + fmtNum(simLines) + ' lines, ' + fmtNum(piecesPlaced) + ' pieces');
+        return;
+      }
+
+      simAIScore += bestMove.score;
+
+      // Snapshot state BEFORE hold swap (for replay starting state computation)
+      simStateLog.push({ holdType: simHoldType, lines: simLines, level: simLevel, levelLines: simLevelLines });
+
+      // Execute hold swap if needed
+      const holdWasEmpty = useHold && simHoldType === -1;
+      if (useHold) {
+        if (simHoldType === -1) {
+          simHoldType = currentType;
+          currentType = nextType;
+          nextType = simRandomPieceLogged();
+        } else {
+          const tmp = simHoldType;
+          simHoldType = currentType;
+          currentType = tmp;
+        }
+        simCanHold = false;
+      }
+
+      // Simulate gravity + fixed 10ms delay (independent of main screen autoplay delay)
+      const placement = simulateAutoplayPlacement(playType, bestMove, useHold, b, simDropSpeed, 10);
+      if (placement.premature) prematureLocks++;
+
+      simPlacementSeq++;
+      simPlacementLog.push({
+        piece: simPlacementSeq,
+        type: playType,
+        holdUsed: useHold,
+        holdWasEmpty: holdWasEmpty,
+        x: placement.x,
+        y: placement.y,
+        rotation: placement.rotation
+      });
+
+      if (!simPlacePieceAt(playType, placement.rotation, placement.x, placement.y)) {
+        // Remove phantom entries for this failed placement
+        simStateLog.pop();
+        simPlacementLog.pop();
+        if (holdWasEmpty) simSpawnLog.pop(); // undo extra spawn from hold swap
+        finishSim('Game Over — ' + fmtNum(simLines) + ' lines, ' + fmtNum(piecesPlaced) + ' pieces');
+        return;
+      }
+
+      const cleared = simClearLines();
+      if (cleared > 0) {
+        const pts = [0, 100, 300, 500, 800];
+        simScore += pts[cleared] * simLevel;
+        simLines += cleared;
+        simLevelLines += cleared;
+        simCheckLevelUp();
+      }
+      piecesPlaced++;
+      simCanHold = true;
+
+      // Game over if top row still has blocks after line clears
+      if (b[0].some(c => c !== 0)) {
+        finishSim('Game Over — ' + fmtNum(simLines) + ' lines, ' + fmtNum(piecesPlaced) + ' pieces');
+        return;
+      }
+
+      // Always advance piece queue after placing (same as main game's nextPiece)
+      currentType = nextType;
+      nextType = simRandomPieceLogged();
+    }
+
+    // Update UI once per batch and yield to browser
+    updateSimUI();
+    requestAnimationFrame(simBatch);
+  }
+
+  updateSimUI();
+  document.getElementById('sim-status').textContent = 'Running...';
+  requestAnimationFrame(simBatch);
+}
+
+// Simulation event wiring
+function resetSimUI() {
+  document.getElementById('sim-seed').textContent = gameSeed || '—';
+  document.getElementById('sim-score').textContent = '0';
+  document.getElementById('sim-level').textContent = '1';
+  document.getElementById('sim-lines').textContent = '0';
+  document.getElementById('sim-pieces').textContent = '0';
+  document.getElementById('sim-ai-score').textContent = '0';
+  document.getElementById('sim-premature').textContent = '0';
+  document.getElementById('sim-iprob').textContent = '14.29% (1 in 7)';
+  document.getElementById('sim-board').textContent = '';
+  document.getElementById('sim-fingerprint').textContent = '—';
+  document.getElementById('sim-elapsed').textContent = '—';
+  document.getElementById('sim-status').textContent = 'Ready — press Start';
+}
+
+function showLastSimResults() {
+  const r = lastSimResults;
+  document.getElementById('sim-seed').textContent = r.seed;
+  document.getElementById('sim-score').textContent = fmtNum(r.score);
+  document.getElementById('sim-level').textContent = fmtNum(r.level);
+  document.getElementById('sim-lines').textContent = fmtNum(r.lines);
+  document.getElementById('sim-pieces').textContent = fmtNum(r.pieces);
+  document.getElementById('sim-ai-score').textContent = r.cumulativeAIScore.toLocaleString();
+  document.getElementById('sim-premature').textContent = fmtNum(r.prematureLocks);
+  document.getElementById('sim-iprob').textContent = fmtIProb(r.level);
+  document.getElementById('sim-fingerprint').textContent = r.configFingerprint || '—';
+  const et = r.elapsedSeconds;
+  document.getElementById('sim-elapsed').textContent = et != null
+    ? (et < 60 ? et.toFixed(1) + 's' : Math.floor(et / 60) + 'm ' + (et % 60).toFixed(1) + 's')
+    : '—';
+  document.getElementById('sim-status').textContent = r.result + ' — ' + fmtNum(r.lines) + ' lines, ' + fmtNum(r.pieces) + ' pieces';
+}
+
+document.getElementById('btn-simulate').addEventListener('click', () => {
+  if (simRunning) return;
+  const missing = [];
+  if (!gameSeed) missing.push('Seed number');
+  if (!teamName.trim()) missing.push('Team Name');
+  if (missing.length) {
+    alert('Please enter the following before running the simulation:\n\n- ' + missing.join('\n- '));
+    return;
+  }
+  simPausedGame = false;
+  if (gameActive && !gamePaused && !gameOver) {
+    pauseGame();
+    simPausedGame = true;
+  }
+  const modal = document.getElementById('sim-modal');
+  const stopBtn = document.getElementById('sim-stop');
+  if (lastSimResults) {
+    showLastSimResults();
+    stopBtn.textContent = 'Start';
+    stopBtn.disabled = false;
+    document.getElementById('sim-close').disabled = false;
+    document.getElementById('sim-export').disabled = false;
+    document.getElementById('sim-export-log').disabled = false;
+  } else {
+    resetSimUI();
+    stopBtn.textContent = 'Start';
+    stopBtn.disabled = false;
+    document.getElementById('sim-close').disabled = false;
+    document.getElementById('sim-export').disabled = true;
+    document.getElementById('sim-export-log').disabled = true;
+  }
+  modal.classList.remove('hidden');
+});
+
+document.getElementById('sim-stop').addEventListener('click', () => {
+  if (simRunning) {
+    simStopped = true;
+  } else {
+    // Start / Restart
+    resetSimUI();
+    document.getElementById('sim-status').textContent = 'Starting...';
+    document.getElementById('sim-stop').textContent = 'Stop';
+    document.getElementById('sim-close').disabled = true;
+    document.getElementById('sim-export').disabled = true;
+    document.getElementById('sim-export-log').disabled = true;
+    runSimulation();
+  }
+});
+
+document.getElementById('sim-close').addEventListener('click', closeSimModal);
+document.getElementById('sim-close-x').addEventListener('click', () => {
+  if (!simRunning) closeSimModal();
+});
+
+const exportSimMenu = document.getElementById('export-sim-menu');
+document.getElementById('sim-export').addEventListener('click', () => {
+  if (!lastSimResults) return;
+  exportSimMenu.classList.toggle('hidden');
+});
+exportSimMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.export-menu-item');
+  if (!item || !lastSimResults) return;
+  const ext = item.dataset.ext;
+  const prefix = teamName ? teamName.replace(/[^a-zA-Z0-9_-]/g, '_') + '-' : '';
+  const filename = prefix + 'tetris-simulation-seed' + lastSimResults.seed + '-' + lastSimResults.lines + 'lines-' + Date.now() + '.' + ext;
+  downloadFile(JSON.stringify(lastSimResults, null, 2), filename, ext);
+  simResultsExported = true;
+  exportSimMenu.classList.add('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('sim-export').contains(e.target) && !exportSimMenu.contains(e.target)) {
+    exportSimMenu.classList.add('hidden');
+  }
+});
+
+const exportSimLogMenu = document.getElementById('export-sim-log-menu');
+document.getElementById('sim-export-log').addEventListener('click', () => {
+  if (!lastSimPieceLog) return;
+  exportSimLogMenu.classList.toggle('hidden');
+});
+exportSimLogMenu.addEventListener('click', (e) => {
+  const item = e.target.closest('.export-menu-item');
+  if (!item || !lastSimPieceLog) return;
+  const ext = item.dataset.ext;
+  const prefix = teamName ? teamName.replace(/[^a-zA-Z0-9_-]/g, '_') + '-' : '';
+  const filename = prefix + 'tetris-piece-log-seed' + lastSimPieceLog.seed + '-' + lastSimPieceLog.startingLines + 'lines-' + Date.now() + '.' + ext;
+  downloadFile(JSON.stringify(lastSimPieceLog, null, 2), filename, ext);
+  exportSimLogMenu.classList.add('hidden');
+});
+document.addEventListener('click', (e) => {
+  if (!document.getElementById('sim-export-log').contains(e.target) && !exportSimLogMenu.contains(e.target)) {
+    exportSimLogMenu.classList.add('hidden');
+  }
+});
+
+// ===== PERSISTENCE =====
+function loadHighScore() {
+  try {
+    const data = localStorage.getItem('tetrisHighScore');
+    if (data) highScore = JSON.parse(data);
+  } catch (e) { console.log('Failed to load high score', e); }
+}
+
+function saveHighScore() {
+  try { localStorage.setItem('tetrisHighScore', JSON.stringify(highScore)); }
+  catch (e) { console.log('Failed to save high score', e); }
+}
+
+function loadWeights() {
+  try {
+    const data = localStorage.getItem('tetrisAIWeights');
+    if (data) {
+      const saved = JSON.parse(data);
+      if (saved.lines !== undefined) weights.lines = saved.lines;
+      if (saved.holes !== undefined) weights.holes = saved.holes;
+      if (saved.bumpiness !== undefined) weights.bumpiness = saved.bumpiness;
+      if (saved.height !== undefined) weights.height = saved.height;
+      if (saved.valley !== undefined) weights.valley = saved.valley;
+    }
+  } catch (e) { console.log('Failed to load weights', e); }
+}
+
+function saveWeights() {
+  try { localStorage.setItem('tetrisAIWeights', JSON.stringify(weights)); }
+  catch (e) { console.log('Failed to save weights', e); }
+}
+
+function loadCustomFormulas() {
+  try {
+    const data = localStorage.getItem('tetrisCustomFormulas');
+    if (data) {
+      const saved = JSON.parse(data);
+      ['lines', 'holes', 'bump', 'height', 'valley', 'total'].forEach(key => {
+        if (typeof saved[key] === 'string') customFormulas[key] = saved[key];
+      });
+    }
+  } catch (e) { console.log('Failed to load custom formulas', e); }
+  compileFormulas();
+}
+
+function saveCustomFormulas() {
+  try { localStorage.setItem('tetrisCustomFormulas', JSON.stringify(customFormulas)); }
+  catch (e) { console.log('Failed to save custom formulas', e); }
+}
+
+function loadSeed() {
+  try {
+    const data = localStorage.getItem('tetrisGameSeed');
+    if (data !== null) {
+      const val = parseInt(data, 10);
+      if (!isNaN(val) && val >= 0) gameSeed = val;
+    }
+  } catch (e) { console.log('Failed to load seed', e); }
+  document.getElementById('seed-input').value = gameSeed;
+}
+
+function saveSeed() {
+  try { localStorage.setItem('tetrisGameSeed', String(gameSeed)); }
+  catch (e) { console.log('Failed to save seed', e); }
+}
+
+const VALID_DELAYS = [10, 20, 100, 200, 500, 1000];
+
+function loadAutoplayDelay() {
+  try {
+    const data = localStorage.getItem('tetrisAutoplayDelay');
+    if (data !== null) {
+      const val = parseInt(data, 10);
+      if (VALID_DELAYS.includes(val)) autoplayDelay = val;
+    }
+  } catch (e) { console.log('Failed to load autoplay delay', e); }
+  syncDelayDropdown();
+}
+
+function saveAutoplayDelay() {
+  try { localStorage.setItem('tetrisAutoplayDelay', String(autoplayDelay)); }
+  catch (e) { console.log('Failed to save autoplay delay', e); }
+}
+
+function syncSlider(id, val) {
+  const old = document.getElementById('weight-' + id);
+  // Re-parse HTML to force browser to re-render thumb (like a page load)
+  old.setAttribute('value', val);
+  old.outerHTML = old.outerHTML;
+  // outerHTML replaces the element — re-fetch and set value
+  const fresh = document.getElementById('weight-' + id);
+  fresh.value = val;
+  styleSlider(fresh);
+  // Re-attach input listener
+  fresh.addEventListener('input', () => {
+    if (id === 'overlayTopN') {
+      overlayTopN = parseInt(fresh.value);
+      document.getElementById('val-overlayTopN').textContent = fresh.value;
+    } else {
+      weights[id] = parseFloat(fresh.value);
+      document.getElementById('val-' + id).textContent = formatWeight(id, weights[id]);
+      saveWeights();
+    }
+    styleSlider(fresh);
+    if (vizEnabled && lastAIEvaluation) { renderVisualization(); drawBoard(); }
+  });
+  return fresh;
+}
+
+function syncSliders() {
+  sliderIds.forEach(id => {
+    document.getElementById('val-' + id).textContent = formatWeight(id, weights[id]);
+    syncSlider(id, weights[id]);
+  });
+  topNVal.textContent = overlayTopN;
+  const freshTopN = syncSlider('overlayTopN', overlayTopN);
+  topNSlider = freshTopN;
+}
+
+// ===== INIT =====
+function autoZoom() {
+  const layout = document.getElementById('game-layout');
+  layout.style.zoom = '1';
+  layout.style.transform = 'none';
+  const rect = layout.getBoundingClientRect();
+  const scaleX = (window.innerWidth - 20) / rect.width;
+  const scaleY = (window.innerHeight - 20) / rect.height;
+  const scale = Math.min(scaleX, scaleY);
+  if (scale > 1) {
+    layout.style.zoom = scale;
+    layout.style.transform = 'none';
+  }
+  // Apply same scale to modal contents, capping height to viewport
+  const modalContents = document.querySelectorAll('.cem-modal-content, .formula-modal-content, .scorer-modal-content');
+  const modalScale = scale > 1 ? scale : 1;
+  modalContents.forEach(el => {
+    el.style.transform = 'scale(' + modalScale + ')';
+    el.style.transformOrigin = 'center center';
+    el.style.maxHeight = Math.floor(window.innerHeight / modalScale) + 'px';
+    el.style.overflowY = 'auto';
+  });
+  // Store scale for heatmap tooltip
+  gameZoomScale = modalScale;
+  const tooltip = document.getElementById('heatmap-tooltip');
+  if (tooltip) {
+    tooltip.style.transform = 'scale(' + modalScale + ')';
+    tooltip.style.transformOrigin = 'top left';
+  }
+}
+
+function init() {
+  initBoard();
+  createBoardDOM();
+  createPreviewDOM(nextPreviewEl);
+  createPreviewDOM(holdPreviewEl);
+  loadWeights();
+  syncSliders();
+  loadCustomFormulas();
+  loadCustomScorer();
+  loadAutoplayDelay();
+  loadSeed();
+  loadTeamName();
+  loadHighScore();
+  displayHighScore();
+  updateStats();
+  renderVizPlaceholder();
+  drawBoard();
+  updateTouchAIButton();
+  autoZoom();
+  // Re-sync sliders after zoom is applied to ensure thumb positions are correct
+  syncSliders();
+}
+
+window.addEventListener('resize', autoZoom);
+window.addEventListener('load', autoZoom);
+document.fonts && document.fonts.ready.then(autoZoom);
+init();
+</script>
+</body>
+</html>
