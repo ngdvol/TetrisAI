@@ -78,37 +78,88 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
     }
 
     // LEVEL 3: Add Scorer JS Mutations
+    // KEY INSIGHT: The scorer must add NEW intelligence, NOT re-penalize holes/height
+    // (the sliders + formulas already handle holes & height)
     if (level >= 3) {
-      const tetrisBonus = randChoice([100, 300, 500, 800, 1000]);
-      const panicThreshold = randChoice([8, 10, 12, 14]);
-      const holePenalty = randChoice([5, 10, 15, 20]);
-      
-      candidate.scorer = `
-        let score = 0;
-        if (linesCleared === 4) score += ${tetrisBonus};
-        else if (linesCleared === 3) score += ${tetrisBonus/4};
-        else if (linesCleared > 0) score += 20;
-
-        let heights = [];
-        for (let c = 0; c < 10; c++) {
-          let h = 0;
-          for (let r = 0; r < 20; r++) { if (board[r][c] !== 0) { h = 20 - r; break; } }
-          heights.push(h);
-        }
-
-        let maxH = Math.max(...heights);
-        if (maxH > ${panicThreshold}) score -= (maxH - ${panicThreshold}) * (maxH - ${panicThreshold}) * 10;
-
-        for (let c = 0; c < 10; c++) {
-          let blockCount = 0;
-          let foundTop = false;
+      const scorerTemplates = [
+        // Template A: Tetris bonus only (minimal, let formulas do the rest)
+        (params) => `
+          if (linesCleared === 4) return ${params.tetrisBonus};
+          if (linesCleared === 3) return ${params.tripleBonus};
+          if (linesCleared === 2) return ${params.doubleBonus};
+          return 0;
+        `,
+        // Template B: Row completeness (reward nearly-full rows)
+        (params) => `
+          let score = 0;
+          if (linesCleared === 4) score += ${params.tetrisBonus};
+          else if (linesCleared > 0) score += ${params.doubleBonus};
           for (let r = 0; r < 20; r++) {
-            if (board[r][c] !== 0) { foundTop = true; blockCount++; }
-            else if (foundTop) score -= blockCount * ${holePenalty};
+            let filled = 0;
+            for (let c = 0; c < 10; c++) { if (board[r][c] !== 0) filled++; }
+            if (filled === 9) score += ${params.nineBonus};
+            else if (filled === 8) score += ${params.eightBonus};
           }
-        }
-        return score;
-      `;
+          return score;
+        `,
+        // Template C: Well strategy (keep one column clear for I-pieces)
+        (params) => `
+          let score = 0;
+          if (linesCleared === 4) score += ${params.tetrisBonus};
+          else if (linesCleared > 0) score += 10;
+          for (let r = 0; r < 20; r++) {
+            if (board[r][${params.wellCol}] !== 0) score -= ${params.wellPenalty};
+          }
+          return score;
+        `,
+        // Template D: Bottom density (reward filling from the bottom up)
+        (params) => `
+          let score = 0;
+          if (linesCleared === 4) score += ${params.tetrisBonus};
+          else if (linesCleared > 0) score += 15;
+          for (let r = 15; r < 20; r++) {
+            let filled = 0;
+            for (let c = 0; c < 10; c++) { if (board[r][c] !== 0) filled++; }
+            score += filled * ${params.densityBonus};
+          }
+          return score;
+        `,
+        // Template E: Flatness bonus (reward smooth surface)
+        (params) => `
+          let score = 0;
+          if (linesCleared === 4) score += ${params.tetrisBonus};
+          else if (linesCleared > 0) score += 15;
+          let minH = 20, maxH = 0;
+          for (let c = 0; c < 10; c++) {
+            let h = 0;
+            for (let r = 0; r < 20; r++) { if (board[r][c]) { h = 20 - r; break; } }
+            if (h > maxH) maxH = h;
+            if (h < minH) minH = h;
+          }
+          if (maxH > 0) score -= (maxH - minH) * ${params.flatPenalty};
+          return score;
+        `,
+        // Template F: Pure line clear reward (no board analysis at all)
+        (params) => `
+          return linesCleared * linesCleared * ${params.lineMultiplier};
+        `
+      ];
+
+      const params = {
+        tetrisBonus: randChoice([200, 400, 600, 800, 1000, 1500]),
+        tripleBonus: randChoice([50, 100, 150, 200]),
+        doubleBonus: randChoice([10, 20, 30, 50]),
+        nineBonus: randChoice([10, 20, 30, 50]),
+        eightBonus: randChoice([3, 5, 10, 15]),
+        wellCol: randChoice([0, 9]),
+        wellPenalty: randChoice([5, 10, 15, 20]),
+        densityBonus: randChoice([1, 2, 3, 5]),
+        flatPenalty: randChoice([2, 3, 5, 8]),
+        lineMultiplier: randChoice([50, 100, 150, 200])
+      };
+
+      const template = randChoice(scorerTemplates);
+      candidate.scorer = template(params);
     }
 
     // Apply & Evaluate
@@ -179,3 +230,4 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
   // Kickoff the loop
   setTimeout(runSearchChunk, 100);
 }
+
