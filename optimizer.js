@@ -113,6 +113,7 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
 
     // Apply & Evaluate
     Object.assign(customFormulas, candidate.formulas);
+    compileFormulas(); // CRITICAL: formulas must be compiled before simulation uses them!
     if (level >= 3) {
       customScorerFn = new Function('board', 'linesCleared', candidate.scorer);
     } else {
@@ -150,6 +151,7 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
   function finishSearch() {
     // Restore Original State
     Object.assign(customFormulas, originalFormulas);
+    compileFormulas(); // Restore compiled formulas too
     customScorerFn = originalScorer;
 
     console.log(`\n%c🏁 SEARCH COMPLETE! Evaluated ${iterations} variations in ${timeMinutes} minute(s).`, 'color: #00FFFF; font-size: 16px;');
