@@ -230,4 +230,3 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
   // Kickoff the loop
   setTimeout(runSearchChunk, 100);
 }
-
