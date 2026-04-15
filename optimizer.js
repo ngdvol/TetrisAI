@@ -36,14 +36,13 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
   console.log("%cStarting search loop... check back soon!", "color: yellow;");
 
   function runSearchChunk() {
-    // Generate Candidate
     const candidate = {
       weights: {
-        lines: randNum(1.5, 2.0, 1),
-        holes: randNum(-2.0, -1.0, 1),
-        bumpiness: randNum(-1.5, -0.5, 1),
-        height: randNum(-0.3, -0.01, 2),
-        valley: randNum(-1.5, -0.5, 1)
+        lines: randNum(0.0, 2.0, 1),
+        holes: randNum(-2.0, 0.0, 1),
+        bumpiness: randNum(-1.0, 0.0, 1),
+        height: randNum(-0.10, 0.0, 2),
+        valley: randNum(-1.0, 0.0, 1)
       },
       formulas: { lines: '', holes: '', bump: '', height: '', valley: '', total: '' },
       scorer: 'return 0;'
