@@ -1,11 +1,4 @@
 // === DBS Tetris AI Optimizer === Nguyen An Loc
-// INSTRUCTIONS:
-// 1. Open tetris.therayg.com/competition.html
-// 2. Open Developer Console (Cmd+Option+J or F12)
-// 3. Paste this entire script and hit Enter.
-// 4. Start the optimizer by calling the function with your parameters:
-//
-// Example: runTetrisOptimizer({ level: 3, seed: 12345, timeMinutes: 5 })
 
 async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
   console.log(`%c🚀 Starting Ultimate AI Optimizer...`, 'color: #00FFFF; font-size: 18px; font-weight: bold;');
@@ -49,27 +42,38 @@ async function runTetrisOptimizer({ level = 1, seed = 42, timeMinutes = 1 }) {
     };
 
     // LEVEL 2: Add Formula Mutations
+    // GUI only supports: numbers, variables, +, -, *, /, ^, parentheses
     if (level >= 2) {
       candidate.formulas.holes = randChoice([
-        '', 
-        'holes * wHoles * 3', 
-        'holes * holes * wHoles * 2', 
+        '',
+        'holes * wHoles * 3',
+        'holes * holes * wHoles * 2',
         'holes * holes * wHoles * 5',
-        'holes * holes * holes * wHoles'
+        'holes * holes * holes * wHoles',
+        'holes ^ 2 * wHoles * 3',
+        'holes * wHoles * 10',
+        'holes ^ 2 * wHoles'
       ]);
       candidate.formulas.height = randChoice([
-        '', 
-        '(height > 100 ? height * height * wHeight * 0.01 : height * wHeight)',
-        'height * height * wHeight' 
+        '',
+        'height * wHeight * 2',
+        'height * height * wHeight',
+        'height ^ 2 * wHeight * 0.01',
+        'height * wHeight * 5',
+        'height ^ 2 * wHeight * 0.005'
       ]);
       candidate.formulas.bump = randChoice([
-        '', 
-        'bump * wBump * 1.5', 
-        'bump * bump * wBump'
+        '',
+        'bump * wBump * 1.5',
+        'bump * wBump * 2',
+        'bump ^ 2 * wBump',
+        'bump * bump * wBump * 0.5'
       ]);
       candidate.formulas.valley = randChoice([
         '',
-        'valley * valley * wValley * 0.5'
+        'valley * valley * wValley * 0.5',
+        'valley ^ 2 * wValley',
+        'valley * wValley * 2'
       ]);
     }
 
